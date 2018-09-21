@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-sudo rm -rf results
-sudo rm -rf ./browsertime-results/
+rm -rf results
+rm -rf ./browsertime-results/
+rm errorLog.txt log.txt
