@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 browser=$1
-url=$2
+url=$3
+profile=$2
 domain=`echo $url | cut -d'/' -f3`
 
 dockerOptions=(
@@ -33,10 +34,11 @@ browsertimeOptions=(
 
 docker run "${dockerOptions[@]}" \
             -e RESULT_DIR=./${browser} \
-            -v "$(pwd)"/results/${domain}:/browsertime mybrowsertime  \
+            -v "$(pwd)"/results/${domain}/${profile}:/browsertime browsertime_${profile}  \
             "${url}" \
             "${browsertimeOptions[@]}" \
             -b ${browser} \
             --resultDir=./${browser}
+
 
 
