@@ -1,0 +1,5 @@
+FROM sitespeedio/browsertime:latest
+
+## Overriding original entrypoint
+COPY ./customStart.sh /customStart.sh
+ENTRYPOINT ["/customStart.sh"]
