@@ -1,0 +1,22 @@
+<div class="item-container">
+  <img *ngIf="blockConfig.blockType === BLOCK_TYPES.DYNAMIC" src="{{imgResource}}"
+       [ngStyle]="{
+        'width': blockConfig.span,
+        'height': baseBlockHeight+'px'
+       }"/>
+  <div class="random-text-container" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.TEXT">
+    <p class="static-item  random-text">
+      <ngx-lorem-ipsum [min]="2" [max]="5"></ngx-lorem-ipsum>
+    </p>
+  </div>
+  <div class="static-item main-title" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.TITLE">
+    <h2>This is the title</h2>
+  </div>
+  <div class="static-item main-title" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.SUB_TITLE">
+    <h3>This is page subtitle, laying under the title</h3>
+  </div>
+  <img class="static-item" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.IMG" src="{{imgResource}}"
+       [ngStyle]="{
+        'height': baseBlockHeight+'px'
+       }">
+</div>

@@ -1,0 +1,11 @@
+.random-text {
+  word-wrap: break-word;
+}
+
+.random-text-container {
+  overflow: hidden;
+}
+
+.static-item {
+  margin: 5px 10px 5px 10px;
+}

@@ -1,0 +1,19 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<div class="container">
+  <div *ngFor="let rowBlocks of rowsConfigurationArray" class="row-blocks-container"
+       [ngStyle]="{
+       'height': baseBlockHeightPx+'px',
+       'width': fullScreenWidth+'px'
+       }">
+    <basic-block *ngFor="let blockConfig of rowBlocks" class="basic-block-container"
+                 [blockConfig]="blockConfig"
+                 [baseBlockHeight]="baseBlockHeightPx"
+                 [baseBlockWidth]="baseBlockWidthPx"
+                 [ngStyle]="{
+        'height': blockConfig.blockType === BLOCK_TYPES.DYNAMIC ? baseBlockHeightPx+'px': 'auto',
+        'width': blockConfig.span
+        }">
+    </basic-block>
+  </div>
+</div>
+

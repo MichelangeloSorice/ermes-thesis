@@ -1,0 +1,9 @@
+.row-blocks-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.basic-block-container {
+  display: inline-block;
+}
