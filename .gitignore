@@ -1,4 +1,5 @@
 /.idea
 /resources
-/workdir/results
-/browsertime-results
+/workdir_browsertime/results
+/workdir_browsertime/
+/browsertime-results/docker/config
