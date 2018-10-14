@@ -159,7 +159,7 @@ else
         rm ${RESULT_DIR}/video/1.mp4
     elif [ -a ${RESULT_DIR}/video/0.mp4 ]; then
         echo "Extracting frames from ${RESULT_DIR}"
-        ffmpeg -i ${RESULT_DIR}/video/0.mp4 -vf fps=10 ${RESULT_DIR}/video/ccapture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
+        ffmpeg -i ${RESULT_DIR}/video/0.mp4 -vf fps=10 ${RESULT_DIR}/video/capture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
         rm ${RESULT_DIR}/video/0.mp4
     else
         echo "Unable to find the video file in ${RESULT_DIR}"
