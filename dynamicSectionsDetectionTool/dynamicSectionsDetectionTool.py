@@ -3,10 +3,10 @@
 # @input inputImage path to the image to be splitted
 
 
-import json
+import shutil
 import sys
-from os import listdir
-from os.path import isfile, join
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 
 import cv2
 import numpy as np
@@ -18,6 +18,10 @@ def splitImage(img, numRow, numCol):
     blockHeight = imHeight // numRow
     blockWidth = imWidth // numCol
 
+    # resizing original image
+    img = img[0: blockHeight * numRow, 0: blockWidth * numCol]
+    imHeight, imWidth, nChannels = img.shape
+
     blocksArray = []
     for x in range(0, imHeight, blockHeight):
         if imHeight - x < blockHeight:
@@ -25,9 +29,26 @@ def splitImage(img, numRow, numCol):
         for y in range(0, imWidth, blockWidth):
             if imWidth - y < blockWidth:
                 break
-            blocksArray.append(img[x: x + blockHeight, y: y + blockWidth])
+            block = img[x: x + blockHeight, y: y + blockWidth]
+            blocksArray.append(block)
 
     return blocksArray
+
+
+def countZerosPerBlock(blockArray):
+    blockHeight, blockWidth, nChannels = blockArray[0].shape
+    pixelPerBlock = blockHeight * blockWidth
+
+    zerosCountPerBlock = []
+    for block in blockArray:
+        b, g, r = cv2.split(block)
+        zerosCountPerBlock.append({
+            "b": pixelPerBlock - cv2.countNonZero(b),
+            "g": pixelPerBlock - cv2.countNonZero(g),
+            "r": pixelPerBlock - cv2.countNonZero(r)
+        })
+
+    return zerosCountPerBlock
 
 
 def subtractBlocks(imgArrayA, imgArrayB):
@@ -35,16 +56,19 @@ def subtractBlocks(imgArrayA, imgArrayB):
         print('Impossible to compare image blocks, input images of different sizes...')
         return -1
 
-    perBlockResult = []
-    index = 0
-    for blockFromA in imgArrayA:
-        perBlockResult.append(cv2.subtract(blockFromA, imgArrayB[index]))
-        index += 1
+    perBlockResult = {
+        "straightDiffs": [],
+        "reverseDiffs": []
+    }
+
+    for index, blockFromA in enumerate(imgArrayA):
+        perBlockResult["straightDiffs"].append(cv2.subtract(blockFromA, imgArrayB[index]))
+        perBlockResult["reverseDiffs"].append(cv2.subtract(imgArrayB[index], blockFromA))
 
     return perBlockResult
 
 
-def computeIsStaticArray(perBlockDifference, threshol):
+def computeIsStaticArray(perBlockDifference):
     isBlockStatic = []
     blockWidth, blockHeight, nChannels = perBlockDifference[0].shape
 
@@ -53,23 +77,22 @@ def computeIsStaticArray(perBlockDifference, threshol):
 
     for block in perBlockDifference:
         b, g, r = cv2.split(block)
-        if cv2.countNonZero(b) < threshold and cv2.countNonZero(g) < threshold and cv2.countNonZero(r) < threshold:
-            isBlockStatic.append(True)
-        else:
+        if cv2.countNonZero(b) > threshold and cv2.countNonZero(g) > threshold and cv2.countNonZero(r) > threshold:
             isBlockStatic.append(False)
+        else:
+            isBlockStatic.append(True)
     return isBlockStatic
 
 
 # Code for recreating the image for test sake
 def restoreImage(blocksArray, numRow, numCol):
     restoredImg = []
+
     for x in range(numRow):
-        rowImage = []
-        for y in range(numCol - 1):
-            if y == 0:
-                rowImage = np.concatenate((blocksArray[x * numCol], blocksArray[x * numCol + 1]), 1)
-            else:
-                rowImage = np.concatenate((rowImage, blocksArray[x * numCol + y + 1]), 1)
+        rowImage = blocksArray[x * numCol]
+        base = x * numCol
+        for y in range(1, numCol):
+            rowImage = np.concatenate((rowImage, blocksArray[base + y]), 1)
         if x == 0:
             restoredImg = rowImage
         else:
@@ -89,13 +112,24 @@ def computeJsonSerializableResult(isStaticArray, previousResult, numRow, numCol)
         for x in range(numRow):
             staticBlocksMap.append([])
             for y in range(numCol):
-                staticBlocksMap[x].append(isStaticArray[x * numCol + y])
+                if isStaticArray[x * numCol + y] is False:
+                    staticBlocksMap[x].append({
+                        "count": 1,
+                        "dynamicRankCount": 1
+                    })
+                else:
+                    staticBlocksMap[x].append({
+                        "count": 1,
+                        "dynamicRankCount": 0
+                    })
     else:
         # Update the previous result
         staticBlocksMap = previousResult['staticBlocksMap']
         for x in range(numRow):
             for y in range(numCol):
-                staticBlocksMap[x][y] = isStaticArray[x * numCol + y] and staticBlocksMap[x][y]
+                if isStaticArray[x * numCol + y] is False:
+                    staticBlocksMap[x][y]["dynamicRankCount"] += 1
+                staticBlocksMap[x][y]["count"] += 1
 
     result = {
         'gridParams': [numRow, numCol],
@@ -105,31 +139,66 @@ def computeJsonSerializableResult(isStaticArray, previousResult, numRow, numCol)
     return result
 
 
-def computeVisualResult(result, baseImg):
+def computeVisualResult(result, baseImg, outputFolder, index):
     # Computing block size
     imHeight, imWidth, nChannels = baseImg.shape
     blockHeight = imHeight // result['gridParams'][0]  # imHeight / numRows
     blockWidth = imWidth // result['gridParams'][1]  # imWidth / numCol
 
-    blackBlock = np.zeros((blockHeight, blockWidth, nChannels))
-    whiteBlock = np.ones((blockHeight, blockWidth, nChannels))
+    blackBlock = np.zeros((blockHeight, blockWidth, nChannels), dtype=np.uint8)
+    whiteBlock = np.ones((blockHeight, blockWidth, nChannels), dtype=np.uint8)
+    whiteBlock[:, :, :] = 255
 
     visualResultBlocksArray = []
     for x in range(result['gridParams'][0]):
         for y in range(result['gridParams'][1]):
-            if result['staticBlocksMap'][x][y] is True:
-                visualResultBlocksArray.append(whiteBlock)
-            else:
+            isStaticConfidence = result['staticBlocksMap'][x][y]['dynamicRankCount'] / result['staticBlocksMap'][x][y][
+                'count']
+            if isStaticConfidence > 0:
                 visualResultBlocksArray.append(blackBlock)
+            else:
+                visualResultBlocksArray.append(whiteBlock)
 
-    return restoreImage(visualResultBlocksArray, result['gridParams'][0], result['gridParams'][1])
+    res = restoreImage(visualResultBlocksArray, result['gridParams'][0], result['gridParams'][1])
+    cv2.imwrite(join(outputFolder, str(index) + '.jpg'), res)
+    return res
+
+
+def performComparisons(baseImg, tmpResult, fileList, numRow, numCol):
+    baseImg_splitted = splitImage(baseImg, numRow, numCol)
+
+    for imgFile in fileList:
+        img = cv2.imread(imgFile, cv2.IMREAD_UNCHANGED)
+
+        # Splitting the image in numRow*numCol blocks of the same size
+        imgSplitted = splitImage(img, numRow, numCol)
+
+        # Subtracting each block of the base image with the corresponding one of the current image
+        perBlockDifference = subtractBlocks(baseImg_splitted, imgSplitted)
+
+        # Applies simple metrics to determine if a block is static or not
+        isStaticArrayStraight = computeIsStaticArray(perBlockDifference["straightDiffs"])
+        isStaticArrayReverse = computeIsStaticArray(perBlockDifference["reverseDiffs"])
+
+        # Computes a json Serializable object containg a matrix mapping static blocks
+        # If tmpResult is not None updates the matrix starting from previous infos
+        tmpResult = computeJsonSerializableResult(isStaticArrayStraight, tmpResult, numRow, numCol)
+        tmpResult = computeJsonSerializableResult(isStaticArrayReverse, tmpResult, numRow, numCol)
+
+    return tmpResult
 
 
 def main():
     numRow = int(sys.argv[1])
     numCol = int(sys.argv[2])
     inputFolder = sys.argv[3]
-    # outputFolder = sys.argv[4]
+
+    outputFolder = './outputFor_' + inputFolder.split('/').pop() + '/'
+    if not exists(outputFolder):
+        makedirs(outputFolder)
+    else:
+        shutil.rmtree(outputFolder)
+        makedirs(outputFolder)
 
     # Retrieving the list of paths to screenshot files in the input directory
     fileList = [join(inputFolder, f) for f in listdir(inputFolder) if isfile(join(inputFolder, f))]
@@ -138,34 +207,19 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
-    # We will every screenshot with the one from the last iteration
-    baseImg = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-    baseImg_splitted = splitImage(baseImg, numRow, numCol)
-
     tmpResult = None
+    index = 0
+    while len(fileList) > 1:
+        # We will compare every screenshot with the one from the last iteration
+        baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
+        tmpResult = performComparisons(baseImgTest, tmpResult, fileList, numRow, numCol)
+        visualResult = computeVisualResult(tmpResult, baseImgTest, outputFolder, index)
+        index += 1
 
-    for imgFile in fileList:
-        # Splitting the image in numRow*numCol blocks of the same size
-        imgSplitted = splitImage(cv2.imread(imgFile, cv2.IMREAD_UNCHANGED), numRow, numCol)
+    # TODO system to exclude images completly different from others
+    # TODO improve visual result computation -- binding to number of images
 
-        # Subtracting each block of the base image with the corresponding one of the current image
-        perBlockDifference = subtractBlocks(baseImg_splitted, imgSplitted)
-
-        # Applies simple metrics to determine if a block is static or not
-        isStaticArray = computeIsStaticArray(perBlockDifference)
-
-        # Computes a json Serializable object containg a matrix mapping static blocks
-        # If tmpResult is not None updates the matrix starting from previous infos
-        tmpResult = computeJsonSerializableResult(isStaticArray, tmpResult, numRow, numCol)
-
-    visualResult = computeVisualResult(tmpResult, baseImg)
-    print(json.dumps(tmpResult, indent=2))
-
-    # if not os.path.exists(outputFolder):
-    #     print("The provided output folder does not exists, the default output folder will be used...")
-    #     outputFolder = './' + imageAFileName + '_results/'
-    #     if not os.path.exists(outputFolder):
-    #         os.makedirs(outputFolder)
+    # print(json.dumps(tmpResult, indent=2))
 
 
 # +++++ Script Entrypoint
