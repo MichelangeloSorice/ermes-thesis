@@ -4,8 +4,9 @@
 
 export const environment = {
   production: false,
-  MAXBLOCK_PER_ROW: 24,
-  MAXBLOCK_PER_COLUMN: 10,
+  // This will keep the same ratio of screenshots made with Browsertime (2000x1468)
+  MAXBLOCK_PER_ROW: 200,
+  MAXBLOCK_PER_COLUMN: 146,
 
   currentConfig: 'externalBands',
 

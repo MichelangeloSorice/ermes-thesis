@@ -36,7 +36,8 @@ export class AppComponent implements OnInit {
     this.baseBlockWidthPx = Math.floor(window.innerWidth / environment.MAXBLOCK_PER_ROW);
     this.baseBlockHeightPx = Math.floor(window.innerHeight / environment.MAXBLOCK_PER_COLUMN);
     this.computeConfigurationArray()
-    console.log('Base block: ' + this.baseBlockWidthPx);
+    console.log('Base block width: ' + this.baseBlockWidthPx);
+    console.log('Base block eight: ' + this.baseBlockHeightPx);
   }
 
 
