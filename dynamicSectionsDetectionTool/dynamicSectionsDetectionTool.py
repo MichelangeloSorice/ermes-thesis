@@ -12,17 +12,10 @@ import cv2
 import numpy as np
 
 
-def splitImage(img, numRow, numCol):
-    # Computing block size
+def splitImage(img, blockHeight, blockWidth):
     imHeight, imWidth, nChannels = img.shape
-    blockHeight = imHeight // numRow
-    blockWidth = imWidth // numCol
-
-    # resizing original image
-    img = img[0: blockHeight * numRow, 0: blockWidth * numCol]
-    imHeight, imWidth, nChannels = img.shape
-
     blocksArray = []
+
     for x in range(0, imHeight, blockHeight):
         if imHeight - x < blockHeight:
             break
@@ -33,22 +26,6 @@ def splitImage(img, numRow, numCol):
             blocksArray.append(block)
 
     return blocksArray
-
-
-def countZerosPerBlock(blockArray):
-    blockHeight, blockWidth, nChannels = blockArray[0].shape
-    pixelPerBlock = blockHeight * blockWidth
-
-    zerosCountPerBlock = []
-    for block in blockArray:
-        b, g, r = cv2.split(block)
-        zerosCountPerBlock.append({
-            "b": pixelPerBlock - cv2.countNonZero(b),
-            "g": pixelPerBlock - cv2.countNonZero(g),
-            "r": pixelPerBlock - cv2.countNonZero(r)
-        })
-
-    return zerosCountPerBlock
 
 
 def subtractBlocks(imgArrayA, imgArrayB):
@@ -68,20 +45,23 @@ def subtractBlocks(imgArrayA, imgArrayB):
     return perBlockResult
 
 
-def computeIsStaticArray(perBlockDifference):
+def computePerBlockResult(perBlockDifference):
     isBlockStatic = []
+    nonZeroPerBlock = []
     blockWidth, blockHeight, nChannels = perBlockDifference[0].shape
 
     # We consider a block static if less than X% (currently 0.5%) of his pixel have not been erased by subtraction
-    threshold = (blockWidth * blockHeight) // 200
+    threshold = (blockWidth * blockHeight) * 3 // 200
 
     for block in perBlockDifference:
         b, g, r = cv2.split(block)
-        if cv2.countNonZero(b) > threshold and cv2.countNonZero(g) > threshold and cv2.countNonZero(r) > threshold:
+        nonZeroCount = cv2.countNonZero(b) + cv2.countNonZero(g) + cv2.countNonZero(r)
+        if nonZeroCount > threshold:
             isBlockStatic.append(False)
         else:
             isBlockStatic.append(True)
-    return isBlockStatic
+        nonZeroPerBlock.append(nonZeroCount)
+    return isBlockStatic, nonZeroPerBlock
 
 
 # Code for recreating the image for test sake
@@ -106,91 +86,79 @@ def restoreImage(blocksArray, numRow, numCol):
     return restoredImg
 
 
-def computeJsonSerializableResult(isStaticArray, previousResult, numRow, numCol):
-    if previousResult is None:
-        staticBlocksMap = []
-        for x in range(numRow):
-            staticBlocksMap.append([])
-            for y in range(numCol):
-                if isStaticArray[x * numCol + y] is False:
-                    staticBlocksMap[x].append({
-                        "count": 1,
-                        "dynamicRankCount": 1
-                    })
-                else:
-                    staticBlocksMap[x].append({
-                        "count": 1,
-                        "dynamicRankCount": 0
-                    })
+def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
+    if previousResult['perBlockResult'] is None:
+        perBlockResult = []
+        for x in range(len(isStaticArray)):
+            dynamicRankCount = 0
+            if isStaticArray[x] is False:
+                dynamicRankCount = 1
+            perBlockResult.append({
+                "evaluations": 1,
+                "timesEvaluatedDynamic": dynamicRankCount,
+                "nonZeroOverallCount": nonZeroCount[x]
+            })
+        previousResult['perBlockResult'] = perBlockResult
     else:
         # Update the previous result
-        staticBlocksMap = previousResult['staticBlocksMap']
-        for x in range(numRow):
-            for y in range(numCol):
-                if isStaticArray[x * numCol + y] is False:
-                    staticBlocksMap[x][y]["dynamicRankCount"] += 1
-                staticBlocksMap[x][y]["count"] += 1
+        for index, block in enumerate(previousResult['perBlockResult']):
+            block['evaluations'] += 1
+            block['nonZeroOverallCount'] += nonZeroCount[index]
+            if isStaticArray[index] is False:
+                block['timesEvaluatedDynamic'] += 1
 
-    result = {
-        'gridParams': [numRow, numCol],
-        'staticBlocksMap': staticBlocksMap
-    }
-
-    return result
+    return previousResult
 
 
-def computeVisualResult(result, baseImg, outputFolder, index):
-    # Computing block size
-    imHeight, imWidth, nChannels = baseImg.shape
-    blockHeight = imHeight // result['gridParams'][0]  # imHeight / numRows
-    blockWidth = imWidth // result['gridParams'][1]  # imWidth / numCol
-
-    blackBlock = np.zeros((blockHeight, blockWidth, nChannels), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, nChannels), dtype=np.uint8)
+def computeVisualResult(result, outputFolder, index):
+    # Generating black and white blocks with correct shape
+    blockHeight, blockWidth = result['blockDimensions']
+    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
+    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
     whiteBlock[:, :, :] = 255
 
     visualResultBlocksArray = []
-    for x in range(result['gridParams'][0]):
-        for y in range(result['gridParams'][1]):
-            isStaticConfidence = result['staticBlocksMap'][x][y]['dynamicRankCount'] / result['staticBlocksMap'][x][y][
-                'count']
-            if isStaticConfidence > 0:
-                visualResultBlocksArray.append(blackBlock)
-            else:
-                visualResultBlocksArray.append(whiteBlock)
+    for block in result['perBlockResult']:
+        isStaticConfidence = block['timesEvaluatedDynamic'] / block['evaluations']
+        if isStaticConfidence > 0:
+            visualResultBlocksArray.append(blackBlock)
+        else:
+            visualResultBlocksArray.append(whiteBlock)
 
-    res = restoreImage(visualResultBlocksArray, result['gridParams'][0], result['gridParams'][1])
+    numRow, numCol = result['gridParams']
+    res = restoreImage(visualResultBlocksArray, numRow, numCol)
     cv2.imwrite(join(outputFolder, str(index) + '.jpg'), res)
     return res
 
 
-def performComparisons(baseImg, tmpResult, fileList, numRow, numCol):
-    baseImg_splitted = splitImage(baseImg, numRow, numCol)
+def performComparisons(baseImg, tmpResult, fileList):
+    blockHeight, blockWidth = tmpResult['blockDimensions']
+    baseImg_splitted = splitImage(baseImg, blockHeight, blockWidth)
 
     for imgFile in fileList:
         img = cv2.imread(imgFile, cv2.IMREAD_UNCHANGED)
 
         # Splitting the image in numRow*numCol blocks of the same size
-        imgSplitted = splitImage(img, numRow, numCol)
+        imgSplitted = splitImage(img, blockHeight, blockWidth)
 
-        # Subtracting each block of the base image with the corresponding one of the current image
+        # Subtracting each block of the base image from the corresponding one of the current image and vice versa
         perBlockDifference = subtractBlocks(baseImg_splitted, imgSplitted)
 
         # Applies simple metrics to determine if a block is static or not
-        isStaticArrayStraight = computeIsStaticArray(perBlockDifference["straightDiffs"])
-        isStaticArrayReverse = computeIsStaticArray(perBlockDifference["reverseDiffs"])
+        isStaticArrayStraight, nonZeroCountStraight = computePerBlockResult(perBlockDifference["straightDiffs"])
+        isStaticArrayReverse, nonZeroCountReverse = computePerBlockResult(perBlockDifference["reverseDiffs"])
 
         # Computes a json Serializable object containg a matrix mapping static blocks
         # If tmpResult is not None updates the matrix starting from previous infos
-        tmpResult = computeJsonSerializableResult(isStaticArrayStraight, tmpResult, numRow, numCol)
-        tmpResult = computeJsonSerializableResult(isStaticArrayReverse, tmpResult, numRow, numCol)
+        tmpResult = computeJsonSerializableResult(isStaticArrayStraight, nonZeroCountStraight, tmpResult)
+        tmpResult = computeJsonSerializableResult(isStaticArrayReverse, nonZeroCountReverse, tmpResult)
 
     return tmpResult
 
 
 def main():
-    numRow = int(sys.argv[1])
-    numCol = int(sys.argv[2])
+    blockHeightPx = int(sys.argv[1])
+    blockWidthPx = int(sys.argv[2])
     inputFolder = sys.argv[3]
 
     outputFolder = './outputFor_' + inputFolder.split('/').pop() + '/'
@@ -207,16 +175,26 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
-    tmpResult = None
+    baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
+    imHeight, imWidth, nChannels = baseImgTest.shape
+
+    # Setting up results container with some basic infos
+    tmpResult = {
+        'blockDimensions': [blockHeightPx, blockWidthPx],
+        'gridParams': [imHeight // blockHeightPx, imWidth // blockWidthPx],
+        'perBlockResult': None,
+    }
+
     index = 0
-    while len(fileList) > 1:
+    while len(fileList) >= 1:
         # We will compare every screenshot with the one from the last iteration
+        tmpResult = performComparisons(baseImgTest, tmpResult, fileList)
+        computeVisualResult(tmpResult, outputFolder, index)
+        # Update the base image for a new round of comparisons
         baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-        tmpResult = performComparisons(baseImgTest, tmpResult, fileList, numRow, numCol)
-        visualResult = computeVisualResult(tmpResult, baseImgTest, outputFolder, index)
         index += 1
 
-    # TODO system to exclude images completly different from others
+    # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images
 
     # print(json.dumps(tmpResult, indent=2))
