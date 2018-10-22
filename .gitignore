@@ -1,6 +1,5 @@
-/.idea/**
-/dynamicSectionsDetectionTool/testIOFolder
-/resources/**
-/workdir_browsertime/results/**
-/workdir_browsertime/**
-/browsertime-results/docker/config
+dynamicSectionsDetectionTool/testIOFolder/**
+workdir_browsertime/resources/**
+workdir_browsertime/docker/config/**
+resources/**
+.idea
