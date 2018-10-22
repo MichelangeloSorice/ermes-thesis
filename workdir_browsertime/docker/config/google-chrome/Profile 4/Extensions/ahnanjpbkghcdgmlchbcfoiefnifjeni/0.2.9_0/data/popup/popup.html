@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="medium-style-confirm/msc.css">
+    <link rel="stylesheet" type="text/css" href="explore/explore.css">
+    <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+<table id="input-table">
+    <tbody>
+    <tr>
+        <td id="input-field-td"><input id="input-field"
+                                       title="Enter a Website for the White-list Table Below (Active Tab URL is Added by Default)"></input>
+        </td>
+        <td id="input-field-add" title="Add the Website to the White-list Table Below."></td>
+        <td id="global-settings" title="Click to Open Settings Page."></td>
+    </tr>
+    </tbody>
+</table>
+<div id="website-list">
+    <table id="website-list-table" type="add"></table>
+</div>
+<table class="website-list-table">
+    <tbody>
+    <tr id="information-tr">
+        <td id="information-td"><p id="information-span"></p></td>
+        <td id="start-stop-button" title="Click to Enable of Disable NoScript Suite Lite Addon."></td>
+    </tr>
+    </tbody>
+</table>
+<table id="selection-array-table">
+    <tbody>
+    <tr>
+        <td id="script" type="selection" title="Choose this option to block sources of Scripts (active by default)">
+            Script
+        </td>
+        <td id="style" type="selection" title="Choose this option to block sources of Stylesheets (css)">Style</td>
+        <td id="image" type="selection" title="Choose this option to block sources of Images (html <img> elements)">
+            Image
+        </td>
+        <td id="object" type="selection"
+            title="Choose this option to block sources of Plugins (html <object>, <embed> and <applet> elements)">Object
+        </td>
+        <td id="media" type="selection"
+            title="Choose this option to block sources of Audio and Videos (html <audio> and <video> elements)">Media
+        </td>
+        <td id="separator" type="selection"></td>
+        <td id="reset" type="selection" title="Reset to factory settings"></td>
+        <td id="bug" type="selection" title="Click to open bug report form"></td>
+        <td id="faq" type="selection" title="Click to open support page"></td>
+    </tr>
+    </tbody>
+</table>
+<div id="explore"></div>
+<script async src="explore/explore.js"></script>
+<script src="medium-style-confirm/msc.js"></script>
+<script type="text/javascript" src="popup.js"></script>
+</body>
+</html>

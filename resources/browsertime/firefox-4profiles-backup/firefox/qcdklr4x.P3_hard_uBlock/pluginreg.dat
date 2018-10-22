@@ -1,0 +1,27 @@
+Generated File. Do not edit.
+
+[HEADER]
+Version:0.19t:$
+Arch:x86_64-gcc3:$
+
+[PLUGINS]
+libflashplayer.so:$
+/usr/lib/flashplugin-installer/libflashplayer.so:$
+25.0.0.127:$
+1537171685000:0:0:0:4:$
+Shockwave Flash 25.0 r0:$
+Shockwave Flash:$
+2
+0:application/x-shockwave-flash:Shockwave Flash:swf:$
+1:application/futuresplash:FutureSplash Player:spl:$
+libflashplayer.so:$
+/usr/lib/firefox-addons/plugins/libflashplayer.so:$
+25.0.0.127:$
+1489706354000:0:0:0:4:$
+Shockwave Flash 25.0 r0:$
+Shockwave Flash:$
+2
+0:application/x-shockwave-flash:Shockwave Flash:swf:$
+1:application/futuresplash:FutureSplash Player:spl:$
+
+[INVALID]

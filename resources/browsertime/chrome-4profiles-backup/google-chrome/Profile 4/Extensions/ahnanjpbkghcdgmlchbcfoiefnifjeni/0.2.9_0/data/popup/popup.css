@@ -1,0 +1,230 @@
+body {
+  margin: 0;
+  padding: 1px;
+  width: 600px;
+  cursor: default;
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+p {
+  margin: 0;
+  color: #333;
+  height: 50px;
+  padding: 5px;
+  font-size: 12px;
+  min-height: 50px;
+  max-height: 50px;
+  line-height: 14px;
+  text-align: justify;
+  background-color: #FFF;
+  width: calc(100% - 15px);
+  border: solid 1px rgba(0,0,0,0.1);
+}
+
+table {
+  width: 100%;
+  border-spacing: 1px 0px;
+}
+
+a {white-space: normal}
+body, table, input {font-family: arial, sans-serif}
+
+#website-list table tr {
+  background-color: #FFF;
+  outline: solid 1px rgb(211, 211, 211);
+}
+
+table tr td {
+  margin: 0;
+  padding: 0;
+  width: auto;
+  height: 20px;
+  border-width: 0;
+  transition: 0.3s ease all;
+  -moz-transition: 0.3s ease all;
+  -webkit-transition: 0.3s ease all;
+}
+
+table tr td[type='number'] {
+  width: 30px;
+  font-size: 12px;
+  text-align: center;
+}
+
+table tr td[type='item'] {
+  display: block;
+  font-size: 12px;
+  overflow: hidden;
+  padding-left: 5px;
+  line-height: 20px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+table tr td[type='close'] {
+  width: 40px;
+  cursor: pointer;
+  background: url('close-black.png') no-repeat center center;
+}
+
+table tr td[type='close']:hover {background: #C75050 url('close-white.png') no-repeat center center}
+
+table tr td[type='selection'] {
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  vertical-align: middle;
+  background-color: #FFF;
+}
+
+table tr td[type='selection']:hover,
+table tr td[type='selection'][mode='selected']:hover {
+  color: white;
+  background-color: #0E8E4E;
+}
+
+table tr td[type='selection'][mode='selected'] {
+  color: white;
+  background-color: #0f9d58;
+}
+
+input {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  font-size: 16px;
+}
+
+.website-list-table {
+  border: 0;
+  padding: 3px;
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
+  margin: 10px 0 0 0;
+}
+
+#start-stop-button {
+  color: #FFF;
+  height: 100%;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  transition: 0.3s ease all;
+  -moz-transition: 0.3s ease all;
+  -webkit-transition: 0.3s ease all;
+  background: #0f9d58 url('enable.png') no-repeat center center;
+}
+
+#start-stop-button {
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  border-radius: 120px;
+  background-size: 48px !important;
+}
+
+#start-stop-button[state='enable'] {background: #0f9d58 url('enable.png') no-repeat center center}
+#start-stop-button[state='disable'] {background: #808080 url('disable.png') no-repeat center center}
+#start-stop-button[state='enable']:hover {background: #0E8E4E url('enable.png') no-repeat center center}
+
+#information-td {width: 100%}
+#information-tr {outline: none}
+
+#website-list {
+  height: 250px;
+  overflow: auto;
+  display: block;
+  min-height: 250px;
+  max-height: 250px;
+}
+
+#website-list-table {
+  padding: 5px;
+  border-spacing: 0 3px;
+}
+
+#input-table {
+  padding: 10px;
+}
+
+#input-table tr {
+  outline: none;
+}
+
+#input-field {
+  margin: 0;
+  padding: 0;
+  height: 35px;
+  text-indent: 10px;
+  border: solid 1px rgba(0,0,0,0.1);
+}
+
+#input-field-add {
+  width: 47px;
+  height: 35px;
+  cursor: pointer;
+  background: #0f9d58 url('add.png') no-repeat center center;
+}
+
+#input-field-add:hover {background: #0E8E4E url('add.png') no-repeat center center}
+#input-field-add[state='disable'] {background: #808080 url('add.png') no-repeat center center}
+
+#global-settings {
+  width: 47px;
+  height: 35px;
+  cursor: pointer;
+  background: #E5D916 url('settings.png') no-repeat center center;
+  background-size: 16px;
+}
+
+#global-settings:hover {
+  background: #C6BA13 url('settings.png') no-repeat center center;
+  background-size: 16px;
+}
+
+#global-settings[state='disable'] {background: #808080 url('settings.png') no-repeat center center}
+
+#selection-array-table {
+  height: 30px;
+  margin: 10px 0 0 0;
+  table-layout: fixed;
+  border-collapse: separate;
+  border: solid 1px rgba(0,0,0,0.1);
+}
+
+#bug {
+  width: 40px;
+  background: #FFF url('bug.png') no-repeat center center;
+  background-size: 16px;
+}
+
+#faq {
+  width: 40px;
+  background: #FFF url('faq.png') no-repeat center center;
+  background-size: 16px;
+}
+
+#reset {
+  width: 40px;
+  background: #FFF url('reset.png') no-repeat center center;
+  background-size: 16px;
+}
+
+#bug:hover, #faq:hover, #reset:hover {
+  color: #333;
+  background-color: #E2DFAA;
+}
+
+#separator {
+  border: 0;
+  width: 1px;
+  outline: none;
+  background-color: #e5d916;
+}
