@@ -1,18 +1,21 @@
 export interface PageConfiguration {
-  structure: Array< // Array of rows
-    Array< // Array of block sequences with starting and ending index
-      StaticBlockSchema>>;
+  structure: StaticBlockSchema[]; // Array of block sequences with starting and ending index
 };
 
 export interface StaticBlockSchema {
-  start: number;
-  end: number;
-  staticBlockType?: string;
+  xSpan: number[];
+  ySpan: number[];
+  blockType?: string;
   resourceReference?: string;
 }
 
 export interface BasicBlockConfig {
-  span: string; // Css width property value as string, injected in the component
+  // Css properties directly injected to the div containing the block
+  // Exploits absolute positioning and fixed size to be sure that the output layout mirrors what we expect
+  width: string;
+  height: string;
+  top: string;
+  left: string;
   blockType: string; // Allows to characterize a block as static (of a certain type) or dynamic
   resourceReference?: string;
 }

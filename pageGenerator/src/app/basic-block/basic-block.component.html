@@ -1,8 +1,8 @@
 <div class="item-container">
   <img *ngIf="blockConfig.blockType === BLOCK_TYPES.DYNAMIC" src="{{imgResource}}"
        [ngStyle]="{
-        'width': blockConfig.span,
-        'height': baseBlockHeight+'px'
+        'width': blockConfig.width,
+        'height': blockConfig.height
        }"/>
   <div class="random-text-container" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.TEXT">
     <p class="static-item  random-text">
@@ -20,6 +20,6 @@
   </div>
   <img class="static-item" *ngIf="blockConfig.blockType === BLOCK_TYPES.STATIC.IMG" src="{{imgResource}}"
        [ngStyle]="{
-        'height': baseBlockHeight+'px'
+        'height': blockConfig.height
        }">
 </div>

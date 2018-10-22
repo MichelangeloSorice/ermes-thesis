@@ -1,4 +1,5 @@
 .row-blocks-container {
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
