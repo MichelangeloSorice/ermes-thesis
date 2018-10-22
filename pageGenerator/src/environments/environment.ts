@@ -4,9 +4,12 @@
 
 export const environment = {
   production: false,
-  // This will keep the same ratio of screenshots made with Browsertime (2000x1468)
-  MAXBLOCK_PER_ROW: 200,
-  MAXBLOCK_PER_COLUMN: 146,
+  // This will keep the same ratio of screenshots made with Browsertime (1920x1080)
+  MAXBLOCK_PER_ROW: 192,
+  MAXBLOCK_PER_COLUMN: 108,
+
+  baseBlockWidthPx: 10,
+  baseBlockHeightPx: 10,
 
   currentConfig: 'externalBands',
 
@@ -16,16 +19,24 @@ export const environment = {
     // static blocks, remaining blocks are assumed to be non static. Default static block type is text
     externalBands: {
       structure: [
-        [],
-        [{start: 4, end: 20, staticBlockType: 'static-title'}],
-        [{start: 4, end: 20, staticBlockType: 'static-sub-title'}],
-        [{start: 4, end: 20, staticBlockType: 'static-img', resourceReference: '0.jpg'}],
-        [{start: 4, end: 20}],
-        [{start: 4, end: 20}],
-        [{start: 4, end: 20}],
-        [{start: 4, end: 20}],
-        [{start: 4, end: 20, staticBlockType: 'static-video'}],
-        [{start: 4, end: 20}],
+        {xSpan: [0, 192], ySpan: [0, 16]},
+        {xSpan: [0, 24], ySpan: [16, 42]}, {
+          xSpan: [24, 168],
+          ySpan: [16, 26],
+          blockType: 'static-title'
+        }, {xSpan: [168, 192], ySpan: [16, 42]},
+        {xSpan: [0, 24], ySpan: [42, 68]}, {
+          xSpan: [24, 168],
+          ySpan: [26, 32],
+          blockType: 'static-sub-title'
+        }, {xSpan: [168, 192], ySpan: [42, 68]},
+        {xSpan: [0, 24], ySpan: [68, 108]}, {
+          xSpan: [24, 168],
+          ySpan: [32, 50],
+          blockType: 'static-img',
+          resourceReference: '0.jpg'
+        }, {xSpan: [168, 192], ySpan: [68, 108]},
+        {xSpan: [24, 168], ySpan: [50, 108], blockType: 'static-text'}
       ]
     }
   }
