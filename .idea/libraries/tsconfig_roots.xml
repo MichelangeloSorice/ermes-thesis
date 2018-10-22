@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="tsconfig$roots" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/pageGenerator/node_modules/ngx-lorem-ipsum/lib" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/pageGenerator/node_modules/ngx-lorem-ipsum/lib" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
