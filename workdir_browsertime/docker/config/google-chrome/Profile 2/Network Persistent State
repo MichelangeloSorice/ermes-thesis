@@ -1,1 +1,0 @@
-{"net":{"http_server_properties":{"servers":[{"https://clients2.google.com":{"alternative_service":[{"advertised_versions":[43],"expiration":"13184694347069895","port":443,"protocol_str":"quic"}],"supports_spdy":true}}],"version":5}}}
