@@ -9,5 +9,6 @@ export const BLOCK_TYPES = {
     TEXT: 'static-text',
     IMG: 'static-img',
     VIDEO: 'static-video',
+    PLACEHOLDER: 'static-placeholder',
   }
 }

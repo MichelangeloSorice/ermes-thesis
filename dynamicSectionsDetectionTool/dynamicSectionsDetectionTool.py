@@ -78,11 +78,6 @@ def restoreImage(blocksArray, numRow, numCol):
         else:
             restoredImg = np.concatenate((restoredImg, rowImage), 0)
 
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-    cv2.imshow('image', restoredImg)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
     return restoredImg
 
 
@@ -161,7 +156,7 @@ def main():
     blockWidthPx = int(sys.argv[2])
     inputFolder = sys.argv[3]
 
-    outputFolder = './outputFor_' + inputFolder.split('/').pop() + '/'
+    outputFolder = './testIOFolder/outputFor_' + inputFolder.split('/').pop() + '/'
     if not exists(outputFolder):
         makedirs(outputFolder)
     else:
@@ -189,11 +184,15 @@ def main():
     while len(fileList) >= 1:
         # We will compare every screenshot with the one from the last iteration
         tmpResult = performComparisons(baseImgTest, tmpResult, fileList)
-        computeVisualResult(tmpResult, outputFolder, index)
+        res = computeVisualResult(tmpResult, outputFolder, index)
         # Update the base image for a new round of comparisons
         baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
         index += 1
 
+    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+    cv2.imshow('image', res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images
 

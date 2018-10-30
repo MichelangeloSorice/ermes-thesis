@@ -34,10 +34,10 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     console.log('Window width:' + document.documentElement.clientWidth);
     console.log('Window height:' + document.documentElement.clientHeight);
-    this.computeBlockDimensions();
+    this.configurePageStructure();
   }
 
-  private computeBlockDimensions(): void {
+  private configurePageStructure(): void {
     this.fullScreenWidth = document.documentElement.clientWidth;
     this.baseBlockWidthPx = environment.baseBlockWidthPx;
     this.baseBlockHeightPx = environment.baseBlockHeightPx;
@@ -45,6 +45,7 @@ export class AppComponent implements OnInit {
       console.log('Error the proposed configuration can not be adapted to current viewPort!');
     }
     this.computeConfigurationArray();
+    this.fillMissingSpaces();
     console.log('Base block width: ' + this.baseBlockWidthPx);
     console.log('Base block eight: ' + this.baseBlockHeightPx);
   }
@@ -85,6 +86,22 @@ export class AppComponent implements OnInit {
       }
     }
     return true;
+  }
+
+  private fillMissingSpaces() {
+    for (let y = 0; y < environment.MAXBLOCK_PER_COLUMN; y++) {
+      for (let x = 0; x < environment.MAXBLOCK_PER_ROW; x++) {
+        if (this.availableBlocksMap[y][x]) this.blocksConfigurationsArray.push(
+          {
+            width: this.baseBlockWidthPx,
+            height: this.baseBlockHeightPx,
+            top: x * this.baseBlockHeightPx,
+            left: y * this.baseBlockWidthPx,
+            blockType: BLOCK_TYPES.STATIC.PLACEHOLDER,
+          }
+        );
+      }
+    }
   }
 
   private evaluateConfig() {
