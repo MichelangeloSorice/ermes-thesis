@@ -180,6 +180,8 @@ def main():
         'perBlockResult': None,
     }
 
+    print(tmpResult)
+
     index = 0
     while len(fileList) >= 1:
         # We will compare every screenshot with the one from the last iteration

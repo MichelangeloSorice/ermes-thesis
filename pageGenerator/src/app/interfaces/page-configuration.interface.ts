@@ -19,3 +19,12 @@ export interface BasicBlockConfig {
   blockType: string; // Allows to characterize a block as static (of a certain type) or dynamic
   resourceReference?: string;
 }
+
+export interface TestCaseSummary {
+  configuration: string;
+  numRows: number;
+  numCol: number;
+  baseBlockHeight: number;
+  baseBlockwidth: number;
+  dynamicBlocksSummary: Array<boolean>;
+}
