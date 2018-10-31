@@ -11,7 +11,7 @@ export const environment = {
   baseBlockWidthPx: 10,
   baseBlockHeightPx: 10,
 
-  currentConfig: 'repubblica',
+  currentConfig: 'isolatedBanners',
 
   configurations: {
     // The structure array contains the blocks of our application as showed on screen
@@ -40,24 +40,67 @@ export const environment = {
     },
     repubblica: {
       structure: [
-        {xSpan: [0, 192], ySpan: [0, 16]},
-        {xSpan: [0, 24], ySpan: [16, 42]}, {
+        {xSpan: [0, 192], ySpan: [0, 16]}, {xSpan: [0, 24], ySpan: [16, 42]},
+        {
           xSpan: [24, 168],
           ySpan: [16, 26],
           blockType: 'static-title'
-        }, {xSpan: [168, 192], ySpan: [16, 42]},
-        {xSpan: [0, 24], ySpan: [42, 68]}, {xSpan: [27, 165], ySpan: [28, 34]}, {
+        },
+        {xSpan: [168, 192], ySpan: [16, 42]}, {xSpan: [0, 24], ySpan: [42, 68]}, {xSpan: [27, 165], ySpan: [28, 34]},
+        {
           xSpan: [24, 168],
           ySpan: [34, 56],
           blockType: 'static-sub-title'
-        }, {xSpan: [168, 192], ySpan: [42, 68]},
-        {xSpan: [0, 24], ySpan: [68, 108]}, {
+        },
+        {xSpan: [168, 192], ySpan: [42, 68]}, {xSpan: [0, 24], ySpan: [68, 108]},
+        {
           xSpan: [24, 168],
           ySpan: [56, 68],
           blockType: 'static-img',
           resourceReference: '0.jpg'
-        }, {xSpan: [168, 192], ySpan: [68, 108]},
-        {xSpan: [24, 168], ySpan: [68, 108], blockType: 'static-text'}
+        },
+        {xSpan: [168, 192], ySpan: [68, 108]},
+        {
+          xSpan: [24, 168],
+          ySpan: [68, 108],
+          blockType: 'static-text'
+        }
+      ]
+    },
+    isolatedBanners: {
+      structure: [
+        {xSpan: [41, 151], ySpan: [3, 19]},
+        {xSpan: [10, 31], ySpan: [21, 42]},
+        {
+          xSpan: [33, 159],
+          ySpan: [21, 29],
+          blockType: 'static-title'
+        },
+        {
+          xSpan: [33, 159],
+          ySpan: [30, 34],
+          blockType: 'static-sub-title'
+        },
+        {
+          xSpan: [35, 75],
+          ySpan: [36, 48],
+          blockType: 'static-img',
+          resourceReference: '0.jpg'
+        },
+        {
+          xSpan: [117, 157],
+          ySpan: [36, 48],
+          blockType: 'static-img',
+          resourceReference: '0.jpg'
+        },
+        {
+          xSpan: [33, 159],
+          ySpan: [50, 89],
+          blockType: 'static-text'
+        },
+        {xSpan: [161, 182], ySpan: [21, 42]},
+        {xSpan: [10, 31], ySpan: [50, 78]}, {xSpan: [161, 182], ySpan: [50, 78]},
+        {xSpan: [31, 161], ySpan: [90, 101]},
       ]
     }
   }

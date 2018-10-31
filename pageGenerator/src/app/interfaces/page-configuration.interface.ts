@@ -25,6 +25,6 @@ export interface TestCaseSummary {
   numRows: number;
   numCol: number;
   baseBlockHeight: number;
-  baseBlockwidth: number;
+  baseBlockWidth: number;
   dynamicBlocksSummary: Array<boolean>;
 }

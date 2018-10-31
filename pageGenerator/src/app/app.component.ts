@@ -176,7 +176,7 @@ export class AppComponent implements OnInit {
       numCol: environment.MAXBLOCK_PER_ROW,
       numRows: environment.MAXBLOCK_PER_COLUMN,
       baseBlockHeight: this.baseBlockHeightPx,
-      baseBlockwidth: this.baseBlockWidthPx,
+      baseBlockWidth: this.baseBlockWidthPx,
       dynamicBlocksSummary: this.dynamicBlocksSummary,
     };
     console.log(JSON.stringify(testCase));
