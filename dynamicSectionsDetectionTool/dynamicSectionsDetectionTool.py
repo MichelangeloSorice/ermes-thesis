@@ -168,7 +168,7 @@ def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
         "pde": None
     }
 
-    return probabilityDistributionsData
+    return probabilityDistributionData
 
 
 
