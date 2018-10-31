@@ -3,6 +3,7 @@
 # @input inputImage path to the image to be splitted
 
 
+import json
 import shutil
 import sys
 from os import listdir, makedirs
@@ -28,34 +29,37 @@ def splitImage(img, blockHeight, blockWidth):
     return blocksArray
 
 
-def subtractBlocks(imgArrayA, imgArrayB):
+def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
     if len(imgArrayA) != len(imgArrayB):
         print('Impossible to compare image blocks, input images of different sizes...')
         return -1
 
-    perBlockResult = {
-        "straightDiffs": [],
-        "reverseDiffs": []
-    }
+    perBlockResult = []
 
     for index, blockFromA in enumerate(imgArrayA):
-        perBlockResult["straightDiffs"].append(cv2.subtract(blockFromA, imgArrayB[index]))
-        perBlockResult["reverseDiffs"].append(cv2.subtract(imgArrayB[index], blockFromA))
+        straightDiff = cv2.subtract(blockFromA, imgArrayB[index])
+        reverseDiff = cv2.subtract(imgArrayB[index], blockFromA)
+        bs, gs, rs = cv2.split(straightDiff)
+        br, gr, rr = cv2.split(reverseDiff)
+        # The total count of zeros is given by the sum of max values over the 3 channels
+        # In this way we take into accounto both straight and reverse difference
+        zeroCount = max(cv2.countNonZero(bs), cv2.countNonZero(br)) \
+                    + max(cv2.countNonZero(gs), cv2.countNonZero(gr)) \
+                    + max(cv2.countNonZero(rs), cv2.countNonZero(rr))
+        perBlockResult.append(zeroCount)
 
     return perBlockResult
 
 
-def computePerBlockResult(perBlockDifference):
+def computePerBlockResult(perBlockDifference, shape):
     isBlockStatic = []
     nonZeroPerBlock = []
-    blockWidth, blockHeight, nChannels = perBlockDifference[0].shape
+    blockWidth, blockHeight, nChannels = shape
 
     # We consider a block static if less than X% (currently 0.5%) of his pixel have not been erased by subtraction
     threshold = (blockWidth * blockHeight) * 3 // 200
 
-    for block in perBlockDifference:
-        b, g, r = cv2.split(block)
-        nonZeroCount = cv2.countNonZero(b) + cv2.countNonZero(g) + cv2.countNonZero(r)
+    for nonZeroCount in perBlockDifference:
         if nonZeroCount > threshold:
             isBlockStatic.append(False)
         else:
@@ -91,14 +95,14 @@ def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
             perBlockResult.append({
                 "evaluations": 1,
                 "timesEvaluatedDynamic": dynamicRankCount,
-                "nonZeroOverallCount": nonZeroCount[x]
+                "nonZeroCounts": [nonZeroCount[x]]
             })
         previousResult['perBlockResult'] = perBlockResult
     else:
         # Update the previous result
         for index, block in enumerate(previousResult['perBlockResult']):
             block['evaluations'] += 1
-            block['nonZeroOverallCount'] += nonZeroCount[index]
+            block['nonZeroCounts'].append(nonZeroCount[index])
             if isStaticArray[index] is False:
                 block['timesEvaluatedDynamic'] += 1
 
@@ -115,7 +119,7 @@ def computeVisualResult(result, outputFolder, index):
     visualResultBlocksArray = []
     for block in result['perBlockResult']:
         isStaticConfidence = block['timesEvaluatedDynamic'] / block['evaluations']
-        if isStaticConfidence > 0:
+        if isStaticConfidence > 0.1:
             visualResultBlocksArray.append(blackBlock)
         else:
             visualResultBlocksArray.append(whiteBlock)
@@ -137,18 +141,35 @@ def performComparisons(baseImg, tmpResult, fileList):
         imgSplitted = splitImage(img, blockHeight, blockWidth)
 
         # Subtracting each block of the base image from the corresponding one of the current image and vice versa
-        perBlockDifference = subtractBlocks(baseImg_splitted, imgSplitted)
+        perBlockDifference = subtractBlocksAndCountZeros(baseImg_splitted, imgSplitted)
 
         # Applies simple metrics to determine if a block is static or not
-        isStaticArrayStraight, nonZeroCountStraight = computePerBlockResult(perBlockDifference["straightDiffs"])
-        isStaticArrayReverse, nonZeroCountReverse = computePerBlockResult(perBlockDifference["reverseDiffs"])
+        isStaticArray, nonZeroCount = computePerBlockResult(perBlockDifference, imgSplitted[0].shape)
 
         # Computes a json Serializable object containg a matrix mapping static blocks
         # If tmpResult is not None updates the matrix starting from previous infos
-        tmpResult = computeJsonSerializableResult(isStaticArrayStraight, nonZeroCountStraight, tmpResult)
-        tmpResult = computeJsonSerializableResult(isStaticArrayReverse, nonZeroCountReverse, tmpResult)
+        tmpResult = computeJsonSerializableResult(isStaticArray, nonZeroCount, tmpResult)
 
     return tmpResult
+
+
+def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
+    perBlockResult = results['perBlockResults']
+    dynamicBlockSummary = configurationData['dynamicBlocksSummary']
+
+    # The number of non zero valued pixels is equal to nPixelsPerBlock*nChannels
+    nn0Range = configurationData['baseBlockHeight'] * configurationData['baseBlockWidth'] * 3
+
+    # Percentage of Dynamic Evaluations
+    pdeRange = 100
+
+    probabilityDistributionData = {
+        "nn0": None,
+        "pde": None
+    }
+
+    return probabilityDistributionsData
+
 
 
 def main():
@@ -156,7 +177,7 @@ def main():
     blockWidthPx = int(sys.argv[2])
     inputFolder = sys.argv[3]
 
-    outputFolder = './testIOFolder/outputFor_' + inputFolder.split('/').pop() + '/'
+    outputFolder = inputFolder + '/output'
     if not exists(outputFolder):
         makedirs(outputFolder)
     else:
@@ -190,6 +211,19 @@ def main():
         # Update the base image for a new round of comparisons
         baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
         index += 1
+
+    finalResult = tmpResult
+
+    # Now finalResult contains for each block:
+    # - nTimes it was evaluated,
+    # - nTimes it was evaluated Dynamic,
+    # - nonZeroPixelCount for each evaluation
+    # we use these data probability distribution functions
+
+    with open(inputFolder + '/configuration.json', 'r') as f:
+        configurationData = json.load(f)
+    evaluateResults(finalResult, configurationData)
+
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', res)
