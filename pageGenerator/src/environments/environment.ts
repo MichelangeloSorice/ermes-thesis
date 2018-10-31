@@ -11,7 +11,7 @@ export const environment = {
   baseBlockWidthPx: 10,
   baseBlockHeightPx: 10,
 
-  currentConfig: 'isolatedBanners',
+  currentConfig: 'repubblica',
 
   configurations: {
     // The structure array contains the blocks of our application as showed on screen
@@ -102,7 +102,72 @@ export const environment = {
         {xSpan: [10, 31], ySpan: [50, 78]}, {xSpan: [161, 182], ySpan: [50, 78]},
         {xSpan: [31, 161], ySpan: [90, 101]},
       ]
-    }
+    },
+    asymmetricBanners: {
+      structure: [
+        {xSpan: [2, 23], ySpan: [0, 108]},
+        {xSpan: [169, 190], ySpan: [0, 108]},
+        {xSpan: [23, 169], ySpan: [0, 12]},
+        {
+          xSpan: [33, 169],
+          ySpan: [12, 24],
+          blockType: 'static-title'
+        },
+        {
+          xSpan: [33, 123],
+          ySpan: [25, 30],
+          blockType: 'static-sub-title'
+        },
+        {xSpan: [123, 168], ySpan: [25, 36]},
+        {
+          xSpan: [123, 168],
+          ySpan: [37, 49],
+          blockType: 'static-img',
+          resourceReference: '0.jpg'
+        },
+        {
+          xSpan: [33, 123],
+          ySpan: [32, 49],
+          blockType: 'static-img',
+          resourceReference: '0.jpg'
+        },
+        {
+          xSpan: [33, 168],
+          ySpan: [50, 65],
+          blockType: 'static-text'
+        },
+        {xSpan: [123, 168], ySpan: [65, 108]},
+        {
+          xSpan: [33, 122],
+          ySpan: [65, 108],
+          blockType: 'static-text'
+        },
+      ]
+    },
+    mainlyDynamic: {
+      structure: [
+        {xSpan: [12, 180], ySpan: [3, 18]},
+        {
+          xSpan: [14, 155],
+          ySpan: [20, 30],
+          blockType: 'static-title'
+        },
+        {xSpan: [159, 182], ySpan: [20, 100]},
+        {xSpan: [14, 158], ySpan: [32, 45]},
+        {
+          xSpan: [14, 155],
+          ySpan: [46, 50],
+          blockType: 'static-sub-title'
+        },
+        {xSpan: [14, 158], ySpan: [51, 61]},
+        {
+          xSpan: [14, 155],
+          ySpan: [62, 72],
+          blockType: 'static-text'
+        },
+        {xSpan: [14, 158], ySpan: [74, 88]},
+      ]
+    },
   }
 
 
