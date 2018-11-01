@@ -1,4 +1,5 @@
 .idea
+dynamicSectionsDetectionTool/testIOFolder/*/output
 resources
 workdir_browsertime/docker/config
 workdir_browsertime/resources
