@@ -10,6 +10,7 @@ from os import listdir, makedirs
 from os.path import isfile, join, exists
 
 import cv2
+import fastplot
 import numpy as np
 
 
@@ -154,22 +155,84 @@ def performComparisons(baseImg, tmpResult, fileList):
 
 
 def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
-    perBlockResult = results['perBlockResults']
+    perBlockResult = results['perBlockResult']
     dynamicBlockSummary = configurationData['dynamicBlocksSummary']
 
     # The number of non zero valued pixels is equal to nPixelsPerBlock*nChannels
     nn0Range = configurationData['baseBlockHeight'] * configurationData['baseBlockWidth'] * 3
+    nn0Bins = []
+    for x in range(0, nn0Range, nn0BinStep):
+        superiorEdge = min(x + nn0BinStep, nn0Range)
+        nn0Bins.append({
+            "range": [x, superiorEdge],
+            "totalBlocks": 0,
+            "dynamicBlocks": 0
+        })
+    nn0Bins.append({
+        "range": [nn0Range, nn0Range + nn0BinStep],
+        "totalBlocks": 0,
+        "dynamicBlocks": 0
+    })
 
     # Percentage of Dynamic Evaluations
     pdeRange = 100
+    pdeBins = []
+    for x in range(0, pdeRange, pdeBinStep):
+        superiorEdge = min(x + pdeBinStep, pdeRange)
+        pdeBins.append({
+            "range": [x, superiorEdge],
+            "totalBlocks": 0,
+            "dynamicBlocks": 0
+        })
+    pdeBins.append({
+        "range": [pdeRange, pdeRange + pdeBinStep],
+        "totalBlocks": 0,
+        "dynamicBlocks": 0
+    })
+
+    # Assigning data to bins
+    for index, blockResult in enumerate(perBlockResult):
+        isBlockDynamic = dynamicBlockSummary[index]
+        for countNonZero in blockResult['nonZeroCounts']:
+            nn0BinIndex = countNonZero // nn0BinStep
+            nn0Bins[nn0BinIndex]['totalBlocks'] += 1
+            if isBlockDynamic: nn0Bins[nn0BinIndex]['dynamicBlocks'] += 1
+
+        blockPde = 100 * (blockResult['timesEvaluatedDynamic'] / blockResult['evaluations'])
+        pdeBinIndex = int(blockPde // pdeBinStep)
+        pdeBins[pdeBinIndex]['totalBlocks'] += 1
+        if isBlockDynamic: pdeBins[pdeBinIndex]['dynamicBlocks'] += 1
 
     probabilityDistributionData = {
-        "nn0": None,
-        "pde": None
+        "nn0": nn0Bins,
+        "pde": pdeBins
     }
 
     return probabilityDistributionData
 
+
+def plotData(outFolder, probDistributionData):
+    nn0Bins, pdeBins = probDistributionData['nn0'], probDistributionData['pde']
+    nn0X, pdeX = range(0, len(nn0Bins)), range(0, len(pdeBins))
+
+    nn0Y = []
+    for block in nn0Bins:
+        if block['totalBlocks'] is not 0:
+            nn0Y.append(block['dynamicBlocks'] / block['totalBlocks'])
+        else:
+            nn0Y.append(0)
+
+    pdeY = []
+    for block in pdeBins:
+        if block['totalBlocks'] is not 0:
+            pdeY.append(block['dynamicBlocks'] / block['totalBlocks'])
+        else:
+            pdeY.append(0)
+
+    fastplot.plot((nn0X, nn0Y), outFolder + 'nn0Plot.png', xlabel='bins', ylabel='DynamicBlockProbability')
+    fastplot.plot((pdeX, pdeY), outFolder + 'pdePlot.png', xlabel='bins', ylabel='DynamicBlockProbability')
+
+    return
 
 
 def main():
@@ -185,7 +248,8 @@ def main():
         makedirs(outputFolder)
 
     # Retrieving the list of paths to screenshot files in the input directory
-    fileList = [join(inputFolder, f) for f in listdir(inputFolder) if isfile(join(inputFolder, f))]
+    input = inputFolder + '/input'
+    fileList = [join(input, f) for f in listdir(input) if isfile(join(input, f))]
 
     if len(fileList) < 2:
         print('There are not enough file in the input folder to perform a meaningful comparison!')
@@ -222,8 +286,13 @@ def main():
 
     with open(inputFolder + '/configuration.json', 'r') as f:
         configurationData = json.load(f)
-    evaluateResults(finalResult, configurationData)
 
+    distributionData = evaluateResults(finalResult, configurationData, 3, 1)
+
+    with open(inputFolder + '/output/probabilityDistributionData.json', 'a+') as outfile:
+        json.dump(distributionData, outfile, indent=2)
+
+    plotData(inputFolder + '/output/', distributionData)
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', res)
