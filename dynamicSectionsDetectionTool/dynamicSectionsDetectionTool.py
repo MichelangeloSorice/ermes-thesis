@@ -250,10 +250,14 @@ def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
     return probabilityDistributionData
 
 
-def plotData(outFolder, probDistributionData):
-    nn0Bins, pdeBins = probDistributionData['nn0'], probDistributionData['pde']
-    nn0X, pdeX = range(0, len(nn0Bins)), range(0, len(pdeBins))
+def plotData(outFolder, data):
+    nn0Bins, pdeBins = data['nn0'], data['pde']
+    overallNn0Values, overallPdeValues = data['nn0Counts']['overall'], data['pdeValues']['overall']
+    staticBlocksNn0Values, staticBlocksPdeValues = data['nn0Counts']['static'], data['pdeValues']['static']
+    dynamicBlocksNn0Values, dynamicBlocksPdeValues = data['nn0Counts']['dynamic'], data['pdeValues']['dynamic']
 
+    # Plotting probability or a block to be dynamic given a certain value of NN0
+    nn0X = range(0, len(nn0Bins)),
     nn0Y = []
     for block in nn0Bins:
         if block['totalBlocks'] is not 0:
@@ -261,21 +265,20 @@ def plotData(outFolder, probDistributionData):
         else:
             nn0Y.append(0)
 
+    fnn0 = scyinterp.interp1d(nn0X, nn0Y, kind='cubic')
+    matplotlib.pyplot.plot(nn0X, fnn0(nn0X), '-')
+    matplotlib.pyplot.legend(['nn0'], loc='best')
+    matplotlib.pyplot.savefig(outFolder + 'dynamicProbForNn0Values.png')
+
+    # Plotting probability for a block to be dynamic given a certain value of PDE
+    pdeX = range(0, len(pdeBins))
     pdeY = []
     for block in pdeBins:
         if block['totalBlocks'] is not 0:
             pdeY.append(block['dynamicBlocks'] / block['totalBlocks'])
         else:
             pdeY.append(0)
-
-    fnn0 = scyinterp.interp1d(nn0X, nn0Y, kind='cubic')
-    # tck = scyinterp.splrep(nn0X, nn0Ycumulative, s=0)
-    nn0SplineY = scyinterp.splev(nn0X, tck, der=1)
-
     fpde = scyinterp.interp1d(pdeX, pdeY, kind='cubic')
-    matplotlib.pyplot.plot(nn0X, fnn0(nn0X), '-', pdeX, fpde(pdeX), '--', nn0X, nn0SplineY)
-    matplotlib.pyplot.legend(['nn0', 'pde', 'nn0Spline'], loc='best')
-    matplotlib.pyplot.savefig(outFolder + 'matplot.png')
 
     # fastplot.plot((nn0X, nn0Y), outFolder + 'nn0Plot.png', xlabel='bins', ylabel='DynamicBlockProbability')
     # fastplot.plot((pdeX, pdeY), outFolder + 'pdePlot.png', xlabel='bins', ylabel='DynamicBlockProbability')
