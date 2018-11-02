@@ -10,8 +10,9 @@ from os import listdir, makedirs
 from os.path import isfile, join, exists
 
 import cv2
-import fastplot
+import matplotlib
 import numpy as np
+import scipy.interpolate as scyinterp
 
 
 def splitImage(img, blockHeight, blockWidth):
@@ -158,54 +159,92 @@ def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
     perBlockResult = results['perBlockResult']
     dynamicBlockSummary = configurationData['dynamicBlocksSummary']
 
+    # Initializing indicators for PDE
     # The number of non zero valued pixels is equal to nPixelsPerBlock*nChannels
     nn0Range = configurationData['baseBlockHeight'] * configurationData['baseBlockWidth'] * 3
+    # NN0 values for dynamic, static and all blocks
+    nonZeroCountsForDynamicBlocks = []
+    nonZeroCountsForStaticBlocks = []
+    overallNonZeroCounts = []
+    # Array of objects representing our bins, counting number of dynamic and static blocks in it
     nn0Bins = []
-    for x in range(0, nn0Range, nn0BinStep):
+    for x in range(0, nn0Range + nn0BinStep, nn0BinStep):
         superiorEdge = min(x + nn0BinStep, nn0Range)
         nn0Bins.append({
             "range": [x, superiorEdge],
             "totalBlocks": 0,
+            "staticBlocks": 0,
             "dynamicBlocks": 0
         })
-    nn0Bins.append({
-        "range": [nn0Range, nn0Range + nn0BinStep],
-        "totalBlocks": 0,
-        "dynamicBlocks": 0
-    })
+        if superiorEdge == nn0Range:
+            break
 
-    # Percentage of Dynamic Evaluations
+    # Initializing indicators for PDE
+    # PDE is a percentage thus its range is always [0, 100]
     pdeRange = 100
+    # PDE values for dynamic, static and all blocks
+    pdeForDynamicBlocks = []
+    pdeForStaticBlocks = []
+    overallPde = []
+    # Array of objects representing our bins, counting number of dynamic and static blocks in it
     pdeBins = []
-    for x in range(0, pdeRange, pdeBinStep):
+    for x in range(0, pdeRange + pdeBinStep, pdeBinStep):
         superiorEdge = min(x + pdeBinStep, pdeRange)
         pdeBins.append({
             "range": [x, superiorEdge],
             "totalBlocks": 0,
+            "staticBlocks": 0,
             "dynamicBlocks": 0
         })
-    pdeBins.append({
-        "range": [pdeRange, pdeRange + pdeBinStep],
-        "totalBlocks": 0,
-        "dynamicBlocks": 0
-    })
+        if superiorEdge == pdeRange:
+            break
 
-    # Assigning data to bins
+    # Use computations results and the TRUTH map of dynamic blocks derived by the page generator
+    # to compute the declared indicators
     for index, blockResult in enumerate(perBlockResult):
         isBlockDynamic = dynamicBlockSummary[index]
+        overallNonZeroCounts.append(blockResult['nonZeroCounts'])
+        if isBlockDynamic:
+            nonZeroCountsForDynamicBlocks.append(blockResult['nonZeroCounts'])
+        else:
+            nonZeroCountsForStaticBlocks.append(blockResult['nonZeroCounts'])
+
         for countNonZero in blockResult['nonZeroCounts']:
             nn0BinIndex = countNonZero // nn0BinStep
             nn0Bins[nn0BinIndex]['totalBlocks'] += 1
-            if isBlockDynamic: nn0Bins[nn0BinIndex]['dynamicBlocks'] += 1
+            if isBlockDynamic:
+                nn0Bins[nn0BinIndex]['dynamicBlocks'] += 1
+            else:
+                nn0Bins[nn0BinIndex]['staticBlocks'] += 1
 
         blockPde = 100 * (blockResult['timesEvaluatedDynamic'] / blockResult['evaluations'])
         pdeBinIndex = int(blockPde // pdeBinStep)
+
+        overallPde.append(blockPde)
         pdeBins[pdeBinIndex]['totalBlocks'] += 1
-        if isBlockDynamic: pdeBins[pdeBinIndex]['dynamicBlocks'] += 1
+
+        if isBlockDynamic:
+            pdeForDynamicBlocks.append(blockPde)
+            pdeBins[pdeBinIndex]['dynamicBlocks'] += 1
+        else:
+            pdeForStaticBlocks.append(blockPde)
+            pdeBins[pdeBinIndex]['staticBlocks'] += 1
+
+
 
     probabilityDistributionData = {
         "nn0": nn0Bins,
-        "pde": pdeBins
+        "nn0Counts": {
+            "overall": overallNonZeroCounts,
+            "dynamic": nonZeroCountsForDynamicBlocks,
+            "static": nonZeroCountsForStaticBlocks
+        },
+        "pde": pdeBins,
+        "pdeValues": {
+            "overall": overallPde,
+            "dynamic": pdeForDynamicBlocks,
+            "static": pdeForStaticBlocks
+        },
     }
 
     return probabilityDistributionData
@@ -229,8 +268,17 @@ def plotData(outFolder, probDistributionData):
         else:
             pdeY.append(0)
 
-    fastplot.plot((nn0X, nn0Y), outFolder + 'nn0Plot.png', xlabel='bins', ylabel='DynamicBlockProbability')
-    fastplot.plot((pdeX, pdeY), outFolder + 'pdePlot.png', xlabel='bins', ylabel='DynamicBlockProbability')
+    fnn0 = scyinterp.interp1d(nn0X, nn0Y, kind='cubic')
+    # tck = scyinterp.splrep(nn0X, nn0Ycumulative, s=0)
+    nn0SplineY = scyinterp.splev(nn0X, tck, der=1)
+
+    fpde = scyinterp.interp1d(pdeX, pdeY, kind='cubic')
+    matplotlib.pyplot.plot(nn0X, fnn0(nn0X), '-', pdeX, fpde(pdeX), '--', nn0X, nn0SplineY)
+    matplotlib.pyplot.legend(['nn0', 'pde', 'nn0Spline'], loc='best')
+    matplotlib.pyplot.savefig(outFolder + 'matplot.png')
+
+    # fastplot.plot((nn0X, nn0Y), outFolder + 'nn0Plot.png', xlabel='bins', ylabel='DynamicBlockProbability')
+    # fastplot.plot((pdeX, pdeY), outFolder + 'pdePlot.png', xlabel='bins', ylabel='DynamicBlockProbability')
 
     return
 
