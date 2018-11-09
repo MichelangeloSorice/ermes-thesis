@@ -37,15 +37,9 @@ def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
     perBlockResult = []
 
     for index, blockFromA in enumerate(imgArrayA):
-        straightDiff = cv2.subtract(blockFromA, imgArrayB[index])
-        reverseDiff = cv2.subtract(imgArrayB[index], blockFromA)
-        bs, gs, rs = cv2.split(straightDiff)
-        br, gr, rr = cv2.split(reverseDiff)
-        # The total count of zeros is given by the sum of max values over the 3 channels
-        # In this way we take into accounto both straight and reverse difference
-        zeroCount = max(cv2.countNonZero(bs), cv2.countNonZero(br)) \
-                    + max(cv2.countNonZero(gs), cv2.countNonZero(gr)) \
-                    + max(cv2.countNonZero(rs), cv2.countNonZero(rr))
+        absoluteDiff = np.absolute(blockFromA - imgArrayB[index])
+        # The total count of non zero valued pixels over the 3 channels
+        zeroCount = np.count_nonzero(absoluteDiff)
         perBlockResult.append(zeroCount)
 
     return perBlockResult
