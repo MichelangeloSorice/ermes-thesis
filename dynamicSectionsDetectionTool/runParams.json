@@ -1,0 +1,29 @@
+{
+  "BLOCK": {
+    "BLOCK_HEIGHT": 10,
+    "BLOCK_WIDTH": 10,
+    "N_CHANNELS": 3
+  },
+  "THRESHOLDS": {
+    "NN0": 0.005,
+    "PDE": 0.1
+  },
+  "THRESHOLDS_ROC_CURVE": [
+    {
+      "NN0": {
+        "range": [
+          0.001,
+          0.05
+        ],
+        "step": 0.001
+      },
+      "PDE": {
+        "range": [
+          0.01,
+          0.5
+        ],
+        "step": 0.01
+      }
+    }
+  ]
+}

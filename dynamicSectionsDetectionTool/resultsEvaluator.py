@@ -133,7 +133,6 @@ def plotData(outFolder, data):
     # pyplot.legend(['nn0'], loc='best')
     # pyplot.savefig(outFolder + 'dynamicProbForPdeValues.png')
 
-    print('Here we go')
 
     # Plotting histograms of binned NN0 values distributions for dynamic and static blocks
     n, bins, patches = pyplot.hist(dynamicBlocksNn0Values, density=True, cumulative=True, histtype='step')
@@ -156,15 +155,15 @@ def plotData(outFolder, data):
 
     # Plotting histograms of PDE values distributions for dynamic and static blocks
     pyplot.hist(dynamicBlocksPdeValues, density=True, cumulative=True, histtype='step')
-    pyplot.savefig(outFolder + 'hist_PDE_dynamicBlocks.png')
+    pyplot.savefig(outFolder + 'cdf_PDE_dynamicBlocks.png')
     pyplot.clf()
 
     pyplot.hist(staticBlocksPdeValues, density=True, cumulative=True, histtype='step')
-    pyplot.savefig(outFolder + 'hist_PDE_staticBlocks.png')
+    pyplot.savefig(outFolder + 'cdf_PDE_staticBlocks.png')
     pyplot.clf()
 
     pyplot.hist(overallPdeValues, density=True, cumulative=True, histtype='step')
-    pyplot.savefig(outFolder + 'hist_PDE_allBlocks.png')
+    pyplot.savefig(outFolder + 'cdf_PDE_allBlocks.png')
     pyplot.clf()
 
     pyplot.hist(np.array([overallPdeValues, staticBlocksPdeValues, dynamicBlocksPdeValues]),

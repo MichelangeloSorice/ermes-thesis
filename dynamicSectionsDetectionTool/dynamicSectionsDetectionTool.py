@@ -51,13 +51,13 @@ def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
     return perBlockResult
 
 
-def computePerBlockResult(perBlockDifference, shape):
+def computePerBlockResult(perBlockDifference, shape, NN0):
     isBlockStatic = []
     nonZeroPerBlock = []
     blockWidth, blockHeight, nChannels = shape
 
     # We consider a block static if less than X% (currently 0.5%) of his pixel have not been erased by subtraction
-    threshold = (blockWidth * blockHeight) * 3 // 200
+    threshold = (blockWidth * blockHeight) * 3 * NN0
 
     for nonZeroCount in perBlockDifference:
         if nonZeroCount > threshold:
@@ -109,17 +109,17 @@ def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
     return previousResult
 
 
-def computeVisualResult(result, outputFolder, index):
+def computeVisualResult(result, outputFolder, index, PDE):
     # Generating black and white blocks with correct shape
     blockHeight, blockWidth = result['blockDimensions']
     blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
     whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
     whiteBlock[:, :, :] = 255
 
-    visualResultBlocksArray = []
+    visualResultBlocksArray = [];
     for block in result['perBlockResult']:
         isStaticConfidence = block['timesEvaluatedDynamic'] / block['evaluations']
-        if isStaticConfidence > 0.1:
+        if isStaticConfidence > PDE:
             visualResultBlocksArray.append(blackBlock)
         else:
             visualResultBlocksArray.append(whiteBlock)
@@ -130,7 +130,7 @@ def computeVisualResult(result, outputFolder, index):
     return res
 
 
-def performComparisons(baseImg, tmpResult, fileList):
+def performComparisons(baseImg, tmpResult, fileList, NN0):
     blockHeight, blockWidth = tmpResult['blockDimensions']
     baseImg_splitted = splitImage(baseImg, blockHeight, blockWidth)
 
@@ -144,7 +144,7 @@ def performComparisons(baseImg, tmpResult, fileList):
         perBlockDifference = subtractBlocksAndCountZeros(baseImg_splitted, imgSplitted)
 
         # Applies simple metrics to determine if a block is static or not
-        isStaticArray, nonZeroCount = computePerBlockResult(perBlockDifference, imgSplitted[0].shape)
+        isStaticArray, nonZeroCount = computePerBlockResult(perBlockDifference, imgSplitted[0].shape, NN0)
 
         # Computes a json Serializable object containg a matrix mapping static blocks
         # If tmpResult is not None updates the matrix starting from previous infos
@@ -156,9 +156,15 @@ def performComparisons(baseImg, tmpResult, fileList):
 
 
 def main():
-    blockHeightPx = int(sys.argv[1])
-    blockWidthPx = int(sys.argv[2])
-    workdir = sys.argv[3]
+    workdir = sys.argv[1]
+
+    with open('./runParams.json') as inputFile:
+        runParams = json.load(inputFile)
+
+    blockHeightPx = runParams['BLOCK']['BLOCK_HEIGHT']
+    blockWidthPx = runParams['BLOCK']['BLOCK_WIDTH']
+    thresholds = runParams['THRESHOLDS']
+
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -188,10 +194,11 @@ def main():
         shutil.rmtree(visualResultsOutputFolder)
         makedirs(visualResultsOutputFolder)
 
+
     while len(fileList) >= 1:
         # We will compare every screenshot with the one from the last iteration
-        tmpResult = performComparisons(baseImgTest, tmpResult, fileList)
-        res = computeVisualResult(tmpResult, visualResultsOutputFolder, index)
+        tmpResult = performComparisons(baseImgTest, tmpResult, fileList, thresholds['NN0'])
+        res = computeVisualResult(tmpResult, visualResultsOutputFolder, index, thresholds['PDE'])
         # Update the base image for a new round of comparisons
         baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
         index += 1
