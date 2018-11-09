@@ -4,10 +4,9 @@
 
 
 import json
-import shutil
 import sys
-from os import listdir, makedirs
-from os.path import isfile, join, exists
+from os import listdir
+from os.path import isfile, join
 
 import cv2
 import numpy as np
@@ -109,25 +108,22 @@ def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
     return previousResult
 
 
-def computeVisualResult(result, outputFolder, index, PDE):
-    # Generating black and white blocks with correct shape
-    blockHeight, blockWidth = result['blockDimensions']
-    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock[:, :, :] = 255
-
-    visualResultBlocksArray = [];
+def computeRocResult(result, NN0, PDE):
+    isDynamicArray = []
     for block in result['perBlockResult']:
         isDynamicConfidence = block['timesEvaluatedDynamic'] / block['evaluations']
         if isDynamicConfidence > PDE:
-            visualResultBlocksArray.append(blackBlock)
+            isDynamicArray.append(True)
         else:
-            visualResultBlocksArray.append(whiteBlock)
+            isDynamicArray.append(False)
 
-    numRow, numCol = result['gridParams']
-    res = restoreImage(visualResultBlocksArray, numRow, numCol)
-    cv2.imwrite(join(outputFolder, str(index) + '.jpg'), res)
-    return res
+    rocResultObj = {
+        "NN0": NN0,
+        "PDE": PDE,
+        "isDynamicArray": isDynamicArray
+    }
+
+    return rocResultObj
 
 
 def performComparisons(baseImg, tmpResult, fileList, NN0):
@@ -153,18 +149,20 @@ def performComparisons(baseImg, tmpResult, fileList, NN0):
     return tmpResult
 
 
-
-
 def main():
     workdir = sys.argv[1]
+    configuration_index = int(sys.argv[2])
 
     with open('./runParams.json') as inputFile:
         runParams = json.load(inputFile)
 
     blockHeightPx = runParams['BLOCK']['BLOCK_HEIGHT']
     blockWidthPx = runParams['BLOCK']['BLOCK_WIDTH']
-    thresholds = runParams['THRESHOLDS']
-
+    config = runParams['THRESHOLDS_ROC_CURVE'][configuration_index]
+    nn0Range = config['NN0']['range']
+    nn0Step = config['NN0']['step']
+    pdeRange = config['PDE']['range']
+    pdeStep = config['PDE']['step']
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -175,51 +173,28 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
-    baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-    imHeight, imWidth, nChannels = baseImgTest.shape
+    rocData = []
+    for PDE in np.arange(pdeRange[0], pdeRange[1], pdeStep):
+        for NN0 in np.arange(nn0Range[0], nn0Range[1], nn0Step):
+            fileList_copy = fileList.copy()
+            baseImgTest = cv2.imread(fileList_copy.pop(), cv2.IMREAD_UNCHANGED)
 
-    # Setting up results container with some basic infos
-    tmpResult = {
-        'blockDimensions': [blockHeightPx, blockWidthPx],
-        'gridParams': [imHeight // blockHeightPx, imWidth // blockWidthPx],
-        'perBlockResult': None,
-    }
-    print(tmpResult)
-    index = 0
+            tmpResult = {
+                'blockDimensions': [blockHeightPx, blockWidthPx],
+                'perBlockResult': None,
+            }
 
-    visualResultsOutputFolder = workdir + '/output/images'
-    if not exists(visualResultsOutputFolder):
-        makedirs(visualResultsOutputFolder)
-    else:
-        shutil.rmtree(visualResultsOutputFolder)
-        makedirs(visualResultsOutputFolder)
+            while len(fileList_copy) >= 1:
+                # We will compare every screenshot with the one from the last iteration
+                tmpResult = performComparisons(baseImgTest, tmpResult, fileList_copy, NN0)
+                # Update the base image for a new round of comparisons
+                baseImgTest = cv2.imread(fileList_copy.pop(), cv2.IMREAD_UNCHANGED)
 
+            print('Computing data for : NN0 - ' + str(NN0) + '  PDE - ' + str(PDE))
+            rocData.append(computeRocResult(tmpResult, NN0, PDE))
 
-    while len(fileList) >= 1:
-        # We will compare every screenshot with the one from the last iteration
-        tmpResult = performComparisons(baseImgTest, tmpResult, fileList, thresholds['NN0'])
-        res = computeVisualResult(tmpResult, visualResultsOutputFolder, index, thresholds['PDE'])
-        # Update the base image for a new round of comparisons
-        baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-        index += 1
-
-    # Now finalResult contains for each block:
-    # - nTimes it was evaluated,
-    # - nTimes it was evaluated Dynamic,
-    # - nonZeroPixelCount for each evaluation
-    # We dump this data into a json file, wich will be used as input by the next step of the pipe
-    finalResult = tmpResult
-    with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
-        json.dump(finalResult, f, indent=2)
-
-
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-    cv2.imshow('image', res)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    # TODO system to exclude images completely different from others
-    # TODO improve visual result computation -- binding to number of images
-
+    with open(workdir + '/input/rocData_config_' + str(configuration_index) + '.json', 'w+') as f:
+        json.dump(rocData, f, indent=2)
 
 
 # +++++ Script Entrypoint
