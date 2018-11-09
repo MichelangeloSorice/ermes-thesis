@@ -103,7 +103,7 @@ def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
     return previousResult
 
 
-def computeVisualResult(result, outputFolder, index, PDE):
+def computeVisualResult(result, outputFolder, PDE):
     # Generating black and white blocks with correct shape
     blockHeight, blockWidth = result['blockDimensions']
     blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
@@ -120,7 +120,7 @@ def computeVisualResult(result, outputFolder, index, PDE):
 
     numRow, numCol = result['gridParams']
     res = restoreImage(visualResultBlocksArray, numRow, numCol)
-    cv2.imwrite(join(outputFolder, str(index) + '.jpg'), res)
+    cv2.imwrite(join(outputFolder, 'visualResult.jpg'), res)
     return res
 
 
@@ -179,23 +179,13 @@ def main():
         'perBlockResult': None,
     }
     print(tmpResult)
-    index = 0
-
-    visualResultsOutputFolder = workdir + '/output/images'
-    if not exists(visualResultsOutputFolder):
-        makedirs(visualResultsOutputFolder)
-    else:
-        shutil.rmtree(visualResultsOutputFolder)
-        makedirs(visualResultsOutputFolder)
-
 
     while len(fileList) >= 1:
         # We will compare every screenshot with the one from the last iteration
         tmpResult = performComparisons(baseImgTest, tmpResult, fileList, thresholds['NN0'])
-        res = computeVisualResult(tmpResult, visualResultsOutputFolder, index, thresholds['PDE'])
         # Update the base image for a new round of comparisons
         baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-        index += 1
+
 
     # Now finalResult contains for each block:
     # - nTimes it was evaluated,
@@ -206,6 +196,14 @@ def main():
     with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
         json.dump(finalResult, f, indent=2)
 
+    visualResultsOutputFolder = workdir + '/output/images'
+    if not exists(visualResultsOutputFolder):
+        makedirs(visualResultsOutputFolder)
+    else:
+        shutil.rmtree(visualResultsOutputFolder)
+        makedirs(visualResultsOutputFolder)
+
+    res = computeVisualResult(finalResult, visualResultsOutputFolder, thresholds['PDE'])
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', res)
