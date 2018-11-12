@@ -1,0 +1,117 @@
+    # The number of non zero valued pixels is equal to nPixelsPerBlock*nChannels
+    nn0Range = configurationData['baseBlockHeight'] * configurationData['baseBlockWidth'] * 3
+
+    # Array of objects representing our bins, counting number of dynamic and static blocks in it
+    nn0Bins = []
+    for x in range(0, nn0Range + nn0BinStep, nn0BinStep):
+        superiorEdge = min(x + nn0BinStep, nn0Range)
+        nn0Bins.append({
+            "range": [x, superiorEdge],
+            "totalBlocks": 0,
+            "staticBlocks": 0,
+            "dynamicBlocks": 0
+        })
+
+
+
+    # Initializing indicators for PDE
+    # PDE is a percentage thus its range is always [0, 100]
+    pdeRange = 100
+
+
+    # Array of objects representing our bins, counting number of dynamic and static blocks in it
+    pdeBins = []
+    for x in range(0, pdeRange + pdeBinStep, pdeBinStep):
+        superiorEdge = min(x + pdeBinStep, pdeRange)
+        pdeBins.append({
+            "range": [x, superiorEdge],
+            "totalBlocks": 0,
+            "staticBlocks": 0,
+            "dynamicBlocks": 0
+        })
+
+
+
+    # MESSING AROUND WITH PLOTS
+    # Plotting probability or a block to be dynamic given a certain value of NN0
+    # nn0X = range(0, len(nn0Bins))
+    # nn0Y = []
+    # for block in nn0Bins:
+    #     if block['totalBlocks'] is not 0:
+    #         nn0Y.append(block['dynamicBlocks'] / block['totalBlocks'])
+    #     else:
+    #         nn0Y.append(0)
+    #
+    #
+    # fnn0 = scyinterp.interp1d(nn0X, nn0Y, kind='cubic')
+    # pyplot.plot(nn0X, fnn0(nn0X), '-')
+    # pyplot.legend(['nn0'], loc='best')
+    # pyplot.savefig(outFolder + 'dynamicProbForNn0Values.png')
+    #
+    # # Plotting probability for a block to be dynamic given a certain value of PDE
+    # pdeX = range(0, len(pdeBins))
+    # pdeY = []
+    # for block in pdeBins:
+    #     if block['totalBlocks'] is not 0:
+    #         pdeY.append(block['dynamicBlocks'] / block['totalBlocks'])
+    #     else:
+    #         pdeY.append(0)
+    #
+    # fpde = scyinterp.interp1d(pdeX, pdeY, kind='cubic')
+    # pyplot.plot(pdeX, fpde(pdeX), '-')
+    # pyplot.legend(['nn0'], loc='best')
+    # pyplot.savefig(outFolder + 'dynamicProbForPdeValues.png')
+
+
+    # Plotting probability density function
+    # # test values for the bw_method option ('None' is the default value)
+    # bw_values = [None,  0.1]
+    #
+    # # generate a list of kde estimators for each bw
+    # kde = [scipyStats.kde.gaussian_kde(dynamicBlocksNn0Values, bw_method=bw) for bw in bw_values]
+    #
+    # # plot density estimates
+    # t_range = np.linspace(0, 300, 200)
+    # for i, bw in enumerate(bw_values):
+    #     pyplot.plot(t_range, kde[i].evaluate(t_range), label='bw = 0.2')
+    #
+    # pyplot.clf()
+
+
+        # Plotting histograms of binned NN0 values distributions for dynamic and static blocks
+        n, bins, patches = pyplot.hist(dynamicBlocksNn0Values, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_NN0_dynamicBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(staticBlocksNn0Values, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_NN0_staticBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(overallNn0Values, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_NN0_allBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(np.array([overallNn0Values, staticBlocksNn0Values, dynamicBlocksNn0Values]), bins=50,
+                    color=['red', 'blue', 'green'], )
+        pyplot.legend(['All blocks', 'Static', 'Dynamic'], loc=1)
+        pyplot.savefig(outFolder + 'hist_NN0_summaryNotNormalized.png')
+        pyplot.clf()
+
+        # Plotting histograms of PDE values distributions for dynamic and static blocks
+        pyplot.hist(dynamicBlocksPdeValues, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_PDE_dynamicBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(staticBlocksPdeValues, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_PDE_staticBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(overallPdeValues, density=True, cumulative=True, histtype='step')
+        pyplot.savefig(outFolder + 'cdf_PDE_allBlocks.png')
+        pyplot.clf()
+
+        pyplot.hist(np.array([overallPdeValues, staticBlocksPdeValues, dynamicBlocksPdeValues]),
+                    color=['red', 'blue', 'green'], )
+        pyplot.legend(['All blocks', 'Static', 'Dynamic'], loc=1)
+        pyplot.savefig(outFolder + 'hist_PDE_summaryNotNormalized.png')
+        pyplot.clf()

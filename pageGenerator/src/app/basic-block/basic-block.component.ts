@@ -21,7 +21,7 @@ export class BasicBlockComponent implements OnInit {
 
   ngOnInit() {
     if (this.blockConfig.blockType === this.BLOCK_TYPES.DYNAMIC)
-      this.imgResource = ADVERTS_BASE_DIR + this.getRandomInt(0, 11) + '.jpg';
+      this.imgResource = ADVERTS_BASE_DIR + this.getRandomInt(0, 25) + '.jpg';
     if (this.blockConfig.blockType === this.BLOCK_TYPES.STATIC.IMG)
       this.imgResource = this.blockConfig.resourceReference ?
         STATIC_IMGS_BASE_DIR + this.blockConfig.resourceReference : STATIC_IMGS_BASE_DIR + 'default.jpg';

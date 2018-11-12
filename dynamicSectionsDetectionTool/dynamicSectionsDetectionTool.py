@@ -124,18 +124,10 @@ def computeVisualResult(result, outputFolder, PDE):
     return res
 
 
-def performComparisons(baseImg, tmpResult, fileList, NN0):
-    blockHeight, blockWidth = tmpResult['blockDimensions']
-    baseImg_splitted = splitImage(baseImg, blockHeight, blockWidth)
-
-    for imgFile in fileList:
-        img = cv2.imread(imgFile, cv2.IMREAD_UNCHANGED)
-
-        # Splitting the image in numRow*numCol blocks of the same size
-        imgSplitted = splitImage(img, blockHeight, blockWidth)
-
+def performComparisons(baseImgSplitted, listImgSplitted, NN0, tmpResult):
+    for imgSplitted in listImgSplitted:
         # Subtracting each block of the base image from the corresponding one of the current image and vice versa
-        perBlockDifference = subtractBlocksAndCountZeros(baseImg_splitted, imgSplitted)
+        perBlockDifference = subtractBlocksAndCountZeros(baseImgSplitted, imgSplitted)
 
         # Applies simple metrics to determine if a block is static or not
         isStaticArray, nonZeroCount = computePerBlockResult(perBlockDifference, imgSplitted[0].shape, NN0)
@@ -147,18 +139,17 @@ def performComparisons(baseImg, tmpResult, fileList, NN0):
     return tmpResult
 
 
-
-
 def main():
+    # The only required input is the working directory which must containt an input
+    # folder with a screenshots subdirectory
     workdir = sys.argv[1]
 
-    with open('./runParams.json') as inputFile:
-        runParams = json.load(inputFile)
+    with open('./sectionDetectionParams.json') as inputFile:
+        sectionDetectionParams = json.load(inputFile)
 
-    blockHeightPx = runParams['BLOCK']['BLOCK_HEIGHT']
-    blockWidthPx = runParams['BLOCK']['BLOCK_WIDTH']
-    thresholds = runParams['THRESHOLDS']
-
+    blockHeightPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT']
+    blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_WIDTH']
+    thresholds = sectionDetectionParams['THRESHOLDS']
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -169,33 +160,42 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
+
     baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
     imHeight, imWidth, nChannels = baseImgTest.shape
 
-    # Setting up results container with some basic infos
+    # Getting a splitted version of all images
+    baseImgSplitted = splitImage(baseImgTest, blockHeightPx, blockWidthPx)
+    splittedImgList = [splitImage(cv2.imread(imgFileName, cv2.IMREAD_UNCHANGED), blockHeightPx, blockWidthPx)
+                       for imgFileName in fileList]
+
+    # Setting up results container with some basic informations
     tmpResult = {
         'blockDimensions': [blockHeightPx, blockWidthPx],
         'gridParams': [imHeight // blockHeightPx, imWidth // blockWidthPx],
+        'NN0_threshold': thresholds['NN0'],
+        'PDE_threshold': thresholds['PDE'],
         'perBlockResult': None,
     }
     print(tmpResult)
 
-    while len(fileList) >= 1:
+    while len(splittedImgList) >= 1:
+        print('There are ' + str(len(splittedImgList)) + ' iterations remaining')
         # We will compare every screenshot with the one from the last iteration
-        tmpResult = performComparisons(baseImgTest, tmpResult, fileList, thresholds['NN0'])
+        tmpResult = performComparisons(baseImgSplitted, splittedImgList, thresholds['NN0'], tmpResult)
         # Update the base image for a new round of comparisons
-        baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
-
+        baseImgSplitted = splittedImgList.pop()
 
     # Now finalResult contains for each block:
     # - nTimes it was evaluated,
     # - nTimes it was evaluated Dynamic,
     # - nonZeroPixelCount for each evaluation
-    # We dump this data into a json file, wich will be used as input by the next step of the pipe
+    # We dump this data into a json file, which will be used as input by the next step of the pipe
     finalResult = tmpResult
     with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
         json.dump(finalResult, f, indent=2)
 
+    # Compute and store a visual representation of the result showing dynamic area as Black blocks on a blank img
     visualResultsOutputFolder = workdir + '/output/images'
     if not exists(visualResultsOutputFolder):
         makedirs(visualResultsOutputFolder)
@@ -207,11 +207,10 @@ def main():
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', res)
-    cv2.waitKey(0)
+    cv2.waitKey(5000)
     cv2.destroyAllWindows()
     # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images
-
 
 
 # +++++ Script Entrypoint
