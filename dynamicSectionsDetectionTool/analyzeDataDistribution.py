@@ -8,7 +8,7 @@ import fastplot
 import numpy as np
 
 
-def evaluateResults(results, configurationData, nn0BinStep, pdeBinStep):
+def evaluateResults(results, configurationData):
     perBlockResult = results['perBlockResult']
     dynamicBlockSummary = configurationData['dynamicBlocksSummary']
 
@@ -84,7 +84,7 @@ def main():
     with open(workdir + '/input/configuration.json') as inputFile:
         pageConfiguration = json.load(inputFile)
 
-    distributionData = evaluateResults(perBlockResults, pageConfiguration, 3, 1)
+    distributionData = evaluateResults(perBlockResults, pageConfiguration)
 
     plotOutFolder = workdir + '/output/plots/'
     if not exists(plotOutFolder):
@@ -95,7 +95,7 @@ def main():
     plotData(plotOutFolder, distributionData)
 
     with open(workdir + '/output/probabilityDistributionData.json', 'w+') as outfile:
-        json.dump(distributionData, outfile, indent=2)
+        json.dump(distributionData, outfile, indent=None)
 
 
 # +++++ Script Entrypoint

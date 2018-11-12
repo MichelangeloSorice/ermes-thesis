@@ -193,7 +193,7 @@ def main():
     # We dump this data into a json file, which will be used as input by the next step of the pipe
     finalResult = tmpResult
     with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
-        json.dump(finalResult, f, indent=2)
+        json.dump(finalResult, f, indent=None)
 
     # Compute and store a visual representation of the result showing dynamic area as Black blocks on a blank img
     visualResultsOutputFolder = workdir + '/output/images'
