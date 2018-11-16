@@ -86,7 +86,7 @@ def main():
 
     distributionData = evaluateResults(perBlockResults, pageConfiguration)
 
-    plotOutFolder = workdir + '/output/plots/'
+    plotOutFolder = workdir + '/output/data_distributions/'
     if not exists(plotOutFolder):
         makedirs(plotOutFolder)
     else:

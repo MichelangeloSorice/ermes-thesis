@@ -1,4 +1,6 @@
-
+# This script exploits the results of the dynamicAectionDetectionTool
+# Results are evaluated wrt to a range of thresholds of NN0 and PDE and the array representing the final decison
+# about each bloc k is stored with a reference to the NN0 and PDE threshold values on which it was computed
 
 import json
 import sys
@@ -39,7 +41,7 @@ def main():
             print('Computing data for : NN0 - ' + str(NN0) + '  PDE - ' + str(PDE))
             isDynamicArray = []
             for blockRes in sectionDetectionResults['perBlockResult']:
-                # For test each nn0Count value with the current NN0 threshold
+                # Evaluate each nn0Count value with the current NN0 threshold
                 blockEvaluations = evaluateBlockNn0Counts(blockRes['nonZeroCounts'], NN0, blockHeightPx, blockWidthPx)
                 # Counting down amount of dynamic evaluations
                 dynamicEvaluations = 0
@@ -62,7 +64,7 @@ def main():
 
 
     with open(workdir + '/input/rocData_config_' + str(configuration_index) + '.json', 'w+') as f:
-        json.dump(rocCurves, f, indent=2)
+        json.dump(rocCurves, f, indent=None)
 
 
 # +++++ Script Entrypoint
