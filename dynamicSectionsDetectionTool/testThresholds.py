@@ -22,7 +22,7 @@ def pdeOverThreshold(pde, threshold):
 
 def main():
     workdir = sys.argv[1]
-    configuration_index = int(sys.argv[2])
+    testConfig = int(sys.argv[2])
 
     with open('./sectionDetectionParams.json') as inputFile:
         sectionDetectionParams = json.load(inputFile)
@@ -33,7 +33,7 @@ def main():
 
     blockHeightPx, blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT'], sectionDetectionParams['BLOCK'][
         'BLOCK_WIDTH']
-    config = sectionDetectionParams['THRESHOLDS_ROC_CURVE'][configuration_index]
+    config = sectionDetectionParams['THRESHOLDS_TESTS'][testConfig]
     nn0Range, nn0Step = config['NN0']['range'], config['NN0']['step']
     pdeRange, pdeStep = config['PDE']['range'], config['PDE']['step']
 
@@ -61,25 +61,25 @@ def main():
         })
 
     # Object keeping the dynamicBlocks summary for each NN0 value for different PDEs
-    rocCurves = []
+    pdeTestData = []
     for PDE in np.arange(pdeRange[0], pdeRange[1], pdeStep):
         # Defining a roc curve for a certain value of PDE when varying NN0
-        rocCurveData = []
+        nn0TestData = []
         for NN0data in blockPDEsForNN0:
             print('Computing final data for : NN0 - ' + str(NN0data['NN0']) + '  PDE - ' + str(PDE))
             isDynamicArray = evaluateBlockIsDynamic(NN0data['perBlockPDE'], PDE)
 
-            rocCurveData.append({
+            nn0TestData.append({
                 "NN0": NN0data['NN0'],
                 "isDynamicArray": isDynamicArray.tolist()
             })
-        rocCurves.append({
+        pdeTestData.append({
             "PDE": PDE,
-            "rocCurveData": rocCurveData
+            "nn0TestData": nn0TestData
         })
 
-    with open(workdir + '/input/thresholdTestData_config_' + str(configuration_index) + '.json', 'w+') as f:
-        json.dump(rocCurves, f, indent=None)
+    with open(workdir + '/input/thresholdTestData_config_' + str(testConfig) + '.json', 'w+') as f:
+        json.dump(pdeTestData, f, indent=None)
 
 
 # +++++ Script Entrypoint
