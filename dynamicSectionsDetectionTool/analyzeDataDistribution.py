@@ -82,7 +82,7 @@ def main():
     with open(workdir + '/input/sectionDetectionResults.json') as inputFile:
         perBlockResults = json.load(inputFile)
         inputFile.close()
-    with open(workdir + '/input/configuration.json') as inputFile:
+    with open(workdir + '/input/pageSummary.json') as inputFile:
         pageConfiguration = json.load(inputFile)
         inputFile.close()
 

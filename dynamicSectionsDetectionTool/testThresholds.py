@@ -78,7 +78,7 @@ def main():
             "rocCurveData": rocCurveData
         })
 
-    with open(workdir + '/input/rocData_config_' + str(configuration_index) + '.json', 'w+') as f:
+    with open(workdir + '/input/thresholdTestData_config_' + str(configuration_index) + '.json', 'w+') as f:
         json.dump(rocCurves, f, indent=None)
 
 

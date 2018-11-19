@@ -70,9 +70,9 @@ def main():
     configurationIndex = int(sys.argv[2])
 
     # Loading results of dynamic section analysis and pageConfiguration data (truth)
-    with open(workdir + '/input/rocData_config_' + str(configurationIndex) + '.json') as rocDataFile:
+    with open(workdir + '/input/testThresholdData_config_' + str(configurationIndex) + '.json') as rocDataFile:
         rocCurves = json.load(rocDataFile)
-    with open(workdir + '/input/configuration.json') as inputFile:
+    with open(workdir + '/input/pageSummary.json') as inputFile:
         pageConfiguration = json.load(inputFile)
         dynamicBlocksSummary = pageConfiguration['dynamicBlocksSummary']
 

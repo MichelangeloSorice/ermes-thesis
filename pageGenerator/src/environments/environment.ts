@@ -11,7 +11,7 @@ export const environment = {
   baseBlockWidthPx: 10,
   baseBlockHeightPx: 10,
 
-  currentConfig: 'externalBands',
+  currentConfig: 'isolatedBanners',
 
   configurations: {
     // The structure array contains the blocks of our application as showed on screen
