@@ -81,8 +81,10 @@ def main():
     # Loading results of dynamic section analisys and pageConfiguration data (truth)
     with open(workdir + '/input/sectionDetectionResults.json') as inputFile:
         perBlockResults = json.load(inputFile)
+        inputFile.close()
     with open(workdir + '/input/configuration.json') as inputFile:
         pageConfiguration = json.load(inputFile)
+        inputFile.close()
 
     distributionData = evaluateResults(perBlockResults, pageConfiguration)
 
