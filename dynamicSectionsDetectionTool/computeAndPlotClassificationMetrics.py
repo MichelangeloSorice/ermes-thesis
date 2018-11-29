@@ -89,7 +89,7 @@ def main():
     curves = []
     for curve in rocCurves:
         pde = curve['PDE']
-        testData = curve['rocCurveData']
+        testData = curve['nn0TestData']
         nn0_values, tpr_values, fpr_values, precision, accuracy, fdr = [], [], [], [], [], []
 
         for test in testData:
