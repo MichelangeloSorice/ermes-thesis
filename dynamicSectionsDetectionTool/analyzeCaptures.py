@@ -1,13 +1,7 @@
-# Script for splitting an image into multiple parts with the same size
-# @input numRow, numCol of the grid splitting the image
-# @input inputImage path to the image to be splitted
-
-
 import json
-import shutil
 import sys
-from os import listdir, makedirs
-from os.path import isfile, join, exists
+from os import listdir
+from os.path import isfile, join
 
 import cv2
 import numpy as np
@@ -62,23 +56,6 @@ def computePerBlockResult(perBlockDifference, shape, NN0):
     return isBlockStatic, nonZeroPerBlock
 
 
-# Code for recreating the image for test sake
-def restoreImage(blocksArray, numRow, numCol):
-    restoredImg = []
-
-    for x in range(numRow):
-        rowImage = blocksArray[x * numCol]
-        base = x * numCol
-        for y in range(1, numCol):
-            rowImage = np.concatenate((rowImage, blocksArray[base + y]), 1)
-        if x == 0:
-            restoredImg = rowImage
-        else:
-            restoredImg = np.concatenate((restoredImg, rowImage), 0)
-
-    return restoredImg
-
-
 def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
     if previousResult['perBlockResult'] is None:
         perBlockResult = []
@@ -101,27 +78,6 @@ def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
                 block['timesEvaluatedDynamic'] += 1
 
     return previousResult
-
-
-def computeVisualResult(result, outputFolder, PDE):
-    # Generating black and white blocks with correct shape
-    blockHeight, blockWidth = result['blockDimensions']
-    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock[:, :, :] = 255
-
-    visualResultBlocksArray = [];
-    for block in result['perBlockResult']:
-        isDynamicConfidence = block['timesEvaluatedDynamic'] / block['evaluations']
-        if isDynamicConfidence > PDE:
-            visualResultBlocksArray.append(blackBlock)
-        else:
-            visualResultBlocksArray.append(whiteBlock)
-
-    numRow, numCol = result['gridParams']
-    res = restoreImage(visualResultBlocksArray, numRow, numCol)
-    cv2.imwrite(join(outputFolder, 'visualResult.jpg'), res)
-    return res
 
 
 def performComparisons(baseImgSplitted, listImgSplitted, NN0, tmpResult):
@@ -160,7 +116,6 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
-
     baseImgTest = cv2.imread(fileList.pop(), cv2.IMREAD_UNCHANGED)
     imHeight, imWidth, nChannels = baseImgTest.shape
 
@@ -195,20 +150,6 @@ def main():
     with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
         json.dump(finalResult, f, indent=None)
 
-    # Compute and store a visual representation of the result showing dynamic area as Black blocks on a blank img
-    visualResultsOutputFolder = workdir + '/output/images'
-    if not exists(visualResultsOutputFolder):
-        makedirs(visualResultsOutputFolder)
-    else:
-        shutil.rmtree(visualResultsOutputFolder)
-        makedirs(visualResultsOutputFolder)
-
-    res = computeVisualResult(finalResult, visualResultsOutputFolder, thresholds['PDE'])
-
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-    cv2.imshow('image', res)
-    cv2.waitKey(5000)
-    cv2.destroyAllWindows()
     # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images
 

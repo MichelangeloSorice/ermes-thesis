@@ -128,7 +128,7 @@ def main():
             "ACCURACY": accuracy
         })
 
-    plotOutFolder = workdir + '/output/classification_metrics/'
+    plotOutFolder = workdir + '/output/classification_metrics_cfg' + configurationIndex + '/'
     if not exists(plotOutFolder):
         makedirs(plotOutFolder)
     else:
