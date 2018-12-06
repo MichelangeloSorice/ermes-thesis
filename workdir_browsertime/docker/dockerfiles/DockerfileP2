@@ -1,4 +1,4 @@
-FROM sitespeedio/browsertime:latest
+FROM browsertime_custom_base
 
 WORKDIR /browsertime
 
