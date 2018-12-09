@@ -1,3 +1,4 @@
+
 import json
 import sys
 from os import listdir
@@ -7,6 +8,7 @@ import cv2
 import numpy as np
 
 
+# Splits an image into an array of sub-images with shape blockHeight x blockWidth
 def splitImage(img, blockHeight, blockWidth):
     imHeight, imWidth, nChannels = img.shape
     blocksArray = []
@@ -23,6 +25,7 @@ def splitImage(img, blockHeight, blockWidth):
     return blocksArray
 
 
+# Subtracts corresponding subBlocks of two different images, and counts the amount of non-null pixels
 def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
     if len(imgArrayA) != len(imgArrayB):
         print('Impossible to compare image blocks, input images of different sizes...')
