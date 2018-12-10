@@ -100,8 +100,10 @@ def main():
     if not exists(classificationMetricsResultsFile):
         print('There is no result file associated with the provided test configuration...')
         return 1
-    with open(workdir + '/output/classificationTestData_cfg' + str(configurationIndex) + '.json', 'r') as testResults:
-        testResults = json.load(testResults)
+    with open(workdir + '/output/classificationTestData_cfg' + str(configurationIndex) + '.json',
+              'r') as testResultsFile:
+        testResults = json.load(testResultsFile)
+        testResultsFile.close()
 
     # Loading or initializing data of best threshold combionations per metric
     bestPerformingThresholdsFileName = workdir + '/output/bestPerformingThresholds.json'
@@ -110,6 +112,7 @@ def main():
     else:
         with open(bestPerformingThresholdsFileName, 'r') as bestThresholdsFile:
             oldBestValues = json.load(bestThresholdsFile)
+            bestThresholdsFile.close()
 
     # Compute and store on a file the best performing combinations of thresholds
     newBestValues = updateBestThresholds(testResults, oldBestValues)

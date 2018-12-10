@@ -8,10 +8,7 @@ import fastplot
 import numpy as np
 
 
-def evaluateResults(results, configurationData):
-    perBlockResult = results['perBlockResult']
-    dynamicBlockSummary = configurationData['dynamicBlocksSummary']
-
+def evaluateResults(perBlockNN0Counts, perBlockPde, dynamicBlockSummary):
     # NN0 values for dynamic, static and all blocks
     nonZeroCountsForDynamicBlocks, nonZeroCountsForStaticBlocks, overallNonZeroCounts = [], [], []
     # PDE values for dynamic, static and all blocks
@@ -19,21 +16,17 @@ def evaluateResults(results, configurationData):
 
     # Use computations results and the TRUTH map of dynamic blocks derived by the page generator
     # to compute the declared indicators
-    for index, blockResult in enumerate(perBlockResult):
+    for index, blockNN0Counts in enumerate(perBlockNN0Counts):
         isBlockDynamic = dynamicBlockSummary[index]
-        overallNonZeroCounts.extend(blockResult['nonZeroCounts'])
+        # Update overall data
+        overallNonZeroCounts.extend(blockNN0Counts)
+        overallPde.append(perBlockPde[index])
         if isBlockDynamic:
-            nonZeroCountsForDynamicBlocks.extend(blockResult['nonZeroCounts'])
+            nonZeroCountsForDynamicBlocks.extend(blockNN0Counts)
+            pdeForDynamicBlocks.append(perBlockPde[index])
         else:
-            nonZeroCountsForStaticBlocks.extend(blockResult['nonZeroCounts'])
-
-        blockPde = 100 * (blockResult['timesEvaluatedDynamic'] / blockResult['evaluations'])
-        overallPde.append(blockPde)
-
-        if isBlockDynamic:
-            pdeForDynamicBlocks.append(blockPde)
-        else:
-            pdeForStaticBlocks.append(blockPde)
+            nonZeroCountsForStaticBlocks.extend(blockNN0Counts)
+            pdeForStaticBlocks.append(perBlockPde[index])
 
     probabilityDistributionData = {
         "nn0Counts": {
@@ -78,15 +71,18 @@ def plotData(outFolder, data):
 def main():
     workdir = sys.argv[1]
 
-    # Loading results of dynamic section analisys and pageConfiguration data (truth)
-    with open(workdir + '/input/sectionDetectionResults.json') as inputFile:
-        perBlockResults = json.load(inputFile)
+    # Loading results of dynamic section analisys, pde computed during final decision and array of truth
+    with open(workdir + '/input/captureAnalysis.json') as inputFile:
+        perBlockNN0Counts = (json.load(inputFile))['perBlockNN0Counts']
+        inputFile.close()
+    with open(workdir + '/output/finalDecision.json') as inputFile:
+        perBlockPde = (json.load(inputFile))['perBlockPde']
         inputFile.close()
     with open(workdir + '/input/pageSummary.json') as inputFile:
-        pageConfiguration = json.load(inputFile)
+        dynamicBlocksSummary = (json.load(inputFile))['dynamicBlocksSummary']
         inputFile.close()
 
-    distributionData = evaluateResults(perBlockResults, pageConfiguration)
+    distributionData = evaluateResults(perBlockNN0Counts, perBlockPde, dynamicBlocksSummary)
 
     plotOutFolder = workdir + '/output/data_distributions/'
     if not exists(plotOutFolder):
@@ -94,10 +90,8 @@ def main():
     else:
         shutil.rmtree(plotOutFolder)
         makedirs(plotOutFolder)
-    plotData(plotOutFolder, distributionData)
 
-    with open(workdir + '/output/probabilityDistributionData.json', 'w+') as outfile:
-        json.dump(distributionData, outfile, indent=None)
+    plotData(plotOutFolder, distributionData)
 
 
 # +++++ Script Entrypoint

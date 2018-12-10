@@ -44,7 +44,6 @@ def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
 
 def computePerBlockResult(perBlockDifference, shape, NN0):
     isBlockStatic = []
-    nonZeroPerBlock = []
     blockWidth, blockHeight, nChannels = shape
 
     # We consider a block static if less than X% (currently 0.5%) of his pixel have not been erased by subtraction
@@ -55,45 +54,28 @@ def computePerBlockResult(perBlockDifference, shape, NN0):
             isBlockStatic.append(False)
         else:
             isBlockStatic.append(True)
-        nonZeroPerBlock.append(nonZeroCount)
-    return isBlockStatic, nonZeroPerBlock
+    return isBlockStatic, perBlockDifference
 
 
-def computeJsonSerializableResult(isStaticArray, nonZeroCount, previousResult):
-    if previousResult['perBlockResult'] is None:
-        perBlockResult = []
-        for x in range(len(isStaticArray)):
-            dynamicRankCount = 0
-            if isStaticArray[x] is False:
-                dynamicRankCount = 1
-            perBlockResult.append({
-                "evaluations": 1,
-                "timesEvaluatedDynamic": dynamicRankCount,
-                "nonZeroCounts": [nonZeroCount[x]]
-            })
-        previousResult['perBlockResult'] = perBlockResult
+def updateResult(nonZeroCounts, previousResult):
+    if previousResult['perBlockNN0Counts'] is None:
+        # Per block result initialization:
+        # it is an array of arrays keeping for each block the non zero count of a subtraction
+        previousResult['perBlockNN0Counts'] = []
+        for index in range(len(nonZeroCounts)):
+            previousResult['perBlockNN0Counts'].append([nonZeroCounts[index]])
     else:
         # Update the previous result
-        for index, block in enumerate(previousResult['perBlockResult']):
-            block['evaluations'] += 1
-            block['nonZeroCounts'].append(nonZeroCount[index])
-            if isStaticArray[index] is False:
-                block['timesEvaluatedDynamic'] += 1
+        for index, nn0array in enumerate(previousResult['perBlockNN0Counts']):
+            nn0array.append(nonZeroCounts[index])
 
     return previousResult
 
 
-def performComparisons(baseImgSplitted, listImgSplitted, NN0, tmpResult):
+def performComparisons(baseImgSplitted, listImgSplitted, tmpResult):
     for imgSplitted in listImgSplitted:
-        # Subtracting each block of the base image from the corresponding one of the current image and vice versa
-        perBlockDifference = subtractBlocksAndCountZeros(baseImgSplitted, imgSplitted)
-
-        # Applies simple metrics to determine if a block is static or not
-        isStaticArray, nonZeroCount = computePerBlockResult(perBlockDifference, imgSplitted[0].shape, NN0)
-
-        # Computes a json Serializable object containg a matrix mapping static blocks
-        # If tmpResult is not None updates the matrix starting from previous infos
-        tmpResult = computeJsonSerializableResult(isStaticArray, nonZeroCount, tmpResult)
+        perBlockNN0Count = subtractBlocksAndCountZeros(baseImgSplitted, imgSplitted)
+        tmpResult = updateResult(perBlockNN0Count, tmpResult)
 
     return tmpResult
 
@@ -105,6 +87,7 @@ def main():
 
     with open('./sectionDetectionParams.json') as inputFile:
         sectionDetectionParams = json.load(inputFile)
+        inputFile.close()
 
     blockHeightPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT']
     blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_WIDTH']
@@ -131,16 +114,13 @@ def main():
     tmpResult = {
         'blockDimensions': [blockHeightPx, blockWidthPx],
         'gridParams': [imHeight // blockHeightPx, imWidth // blockWidthPx],
-        'NN0_threshold': thresholds['NN0'],
-        'PDE_threshold': thresholds['PDE'],
-        'perBlockResult': None,
+        'perBlockNN0Counts': None,
     }
-    print(tmpResult)
 
     while len(splittedImgList) >= 1:
         print('There are ' + str(len(splittedImgList)) + ' iterations remaining')
         # We will compare every screenshot with the one from the last iteration
-        tmpResult = performComparisons(baseImgSplitted, splittedImgList, thresholds['NN0'], tmpResult)
+        tmpResult = performComparisons(baseImgSplitted, splittedImgList, tmpResult)
         # Update the base image for a new round of comparisons
         baseImgSplitted = splittedImgList.pop()
 
@@ -150,8 +130,9 @@ def main():
     # - nonZeroPixelCount for each evaluation
     # We dump this data into a json file, which will be used as input by the next step of the pipe
     finalResult = tmpResult
-    with open(workdir + '/input/sectionDetectionResults.json', 'w+') as f:
+    with open(workdir + '/input/captureAnalysis.json', 'w+') as f:
         json.dump(finalResult, f, indent=None)
+        f.close()
 
     # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images

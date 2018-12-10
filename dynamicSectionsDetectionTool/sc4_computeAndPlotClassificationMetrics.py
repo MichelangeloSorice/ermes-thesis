@@ -70,11 +70,13 @@ def main():
     configurationIndex = int(sys.argv[2])
 
     # Loading results of dynamic section analysis and pageConfiguration data (truth)
-    with open(workdir + '/input/thresholdTestData_config_' + str(configurationIndex) + '.json') as testDataFile:
+    with open(workdir + '/input/thresholdTestData_cfg' + str(configurationIndex) + '.json') as testDataFile:
         testDataCollection = json.load(testDataFile)
+        testDataFile.close()
     with open(workdir + '/input/pageSummary.json') as inputFile:
         pageConfiguration = json.load(inputFile)
         dynamicBlocksSummary = pageConfiguration['dynamicBlocksSummary']
+        inputFile.close()
 
     # Counting total amount of Positive and Negative values
     P, N = 0, 0

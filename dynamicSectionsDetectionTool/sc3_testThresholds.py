@@ -27,12 +27,12 @@ def main():
     with open('./sectionDetectionParams.json') as inputFile:
         sectionDetectionParams = json.load(inputFile)
         inputFile.close()
-    with open(workdir + '/input/sectionDetectionResults.json') as inputFile:
-        sectionDetectionResults = json.load(inputFile)
+    with open(workdir + '/input/captureAnalysis.json') as inputFile:
+        captureAnalysis = json.load(inputFile)
         inputFile.close()
 
-    blockHeightPx, blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT'], sectionDetectionParams['BLOCK'][
-        'BLOCK_WIDTH']
+    blockHeightPx, blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT'], \
+                                  sectionDetectionParams['BLOCK']['BLOCK_WIDTH']
     config = sectionDetectionParams['THRESHOLDS_TESTS'][testConfig]
     nn0Range, nn0Step = config['NN0']['range'], config['NN0']['step']
     pdeRange, pdeStep = config['PDE']['range'], config['PDE']['step']
@@ -48,8 +48,8 @@ def main():
         # Evaluate each nn0Count value with the current NN0 threshold
         threshold = NN0 * 3 * blockHeightPx * blockWidthPx
         pdes = []
-        for blockRes in sectionDetectionResults['perBlockResult']:
-            blockEvaluations = evaluateBlockNn0Counts(blockRes['nonZeroCounts'], threshold)
+        for blockCounts in captureAnalysis['perBlockNN0Counts']:
+            blockEvaluations = evaluateBlockNn0Counts(blockCounts, threshold)
             # Counting down amount of dynamic evaluations
             dynamicEvaluations = np.count_nonzero(blockEvaluations)
             # Computing percentage of dynamic evaluations
@@ -78,8 +78,9 @@ def main():
             "nn0TestData": nn0TestData
         })
 
-    with open(workdir + '/input/thresholdTestData_config_' + str(testConfig) + '.json', 'w+') as f:
+    with open(workdir + '/input/thresholdTestData_cfg' + str(testConfig) + '.json', 'w+') as f:
         json.dump(pdeTestData, f, indent=None)
+        f.close()
 
 
 # +++++ Script Entrypoint
