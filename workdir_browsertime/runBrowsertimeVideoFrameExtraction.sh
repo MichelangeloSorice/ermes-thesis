@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-browser=$1
-url=$3
-profile=$2
+profile=$1
+url=$2
 domain=`echo $url | cut -d'/' -f3`
 
 dockerOptions=(
@@ -16,7 +15,8 @@ dockerOptions=(
 
 ## More options available at https://www.sitespeed.io/documentation/browsertime/configuration/#the-options
 browsertimeOptions=(
-## Disablig
+## Chrome is the default Browser
+## Disabling
 '--videoParams.addTimer=false'
 ## Recording video with framerate of 10fps
 '--videoParams.framerate=10'
@@ -30,15 +30,16 @@ browsertimeOptions=(
 '--iterations=1'
 ## Turn this to true to indent json/har files
 '--prettyPrint=false'
+## Using custom chrome directory
+'--chrome-args=--user-data-dir=/config/google-chrome'
 )
 
 docker run "${dockerOptions[@]}" \
-            -e RESULT_DIR=./${browser} \
-            -v "$(pwd)"/results/${domain}/${profile}:/browsertime browsertime_${profile}  \
+            -v "$(pwd)"/results/${domain}/${profile}:/browsertime browsertime_frame_extraction \
             "${url}" \
             "${browsertimeOptions[@]}" \
-            -b ${browser} \
-            --resultDir=./${browser}
+            --chrome.args=--profile-directory="${profile}" \
+            --chrome.args=--user-data-dir=/config/google-chrome
 
 
 

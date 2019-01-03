@@ -64,7 +64,6 @@ function runWebPageReplay() {
     echo "Shutting things down..."
     kill -2 $replay_pid
     wait $replay_pid
-    echo "What is happening here..."
   }
 
   LATENCY=${LATENCY:-100}
@@ -123,10 +122,9 @@ setupADB
 replay_iteration=0
 limit=$RECORD
 while [ $replay_iteration -lt $limit ]; do
-   echo "Collecting record $replay_iteration out of $limit .."
+   echo "Collecting record ${replay_iteration} out of ${limit} .."
    runWebPageReplay "$@"
-   echo "Here we go again..."
-   let replay_iteration=replay_iteration+1
+   replay_iteration=$(($replay_iteration+1))
 done
 echo "Killing process.."
 kill -s SIGTERM ${PID}

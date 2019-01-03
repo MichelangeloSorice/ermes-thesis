@@ -2,6 +2,8 @@
 domainFile='./resources/domains.txt'
 resultDir='./results'
 logDir='./logs'
+
+# Number of url to be tested at the same time
 urlNumber=$1
 
 
@@ -14,9 +16,8 @@ urlNumber=$1
 #    fi
 #}
 
-##
-# MAIN COMPUTATION
 
+# MAIN COMPUTATION
 if [ ! -d $resultDir ]; then
     mkdir $resultDir
 fi
@@ -30,25 +31,23 @@ echo "Processing started at: ${formattedStartDate}"
 echo ""
 echo "++++++++++++++++++++++++++++++++++++++++"
 echo "Running tests with Profile1 - Vanilla configuration"
-head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "chrome" "profile1"
+head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh  "Profile 1"
 
 echo ""
 echo "++++++++++++++++++++++++++++++++++++++++"
 echo "Running tests with Profile2 - Light uBlock configuration"
-head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "chrome" "profile2"
+head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "Profile 2"
 
 echo ""
 echo "++++++++++++++++++++++++++++++++++++++++"
 echo "Running tests with Profile3 - Hard uBlock configuration"
-head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "chrome" "profile3"
+head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "Profile 3"
 
 echo ""
 echo "++++++++++++++++++++++++++++++++++++++++"
 echo "Running tests with Profile4 - Hard uBlock configuration plus NoScript"
-head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "chrome" "profile4"
+head -n ${urlNumber} ${domainFile} | xargs -L 1 -P 10 ./runBrowsertime.sh "Profile 4"
 
-## Second run with firefox
-#xargs -L 2 -P 10 -a ./resources/domains.txt ./runBrowsertime.sh "firefox"
 
 formattedEndDate=`date '+%Y-%m-%d %H:%M:%S'`
 echo ""

@@ -191,7 +191,7 @@ class SeleniumRunner {
             this.driver.executeScript('window.scrollBy(0, 1000)');
             delay(1000);
             this.driver.executeScript('document.body.scrollTop = document.documentElement.scrollTop = 0;');
-            delay(1000);
+            delay(3000);
 
         } catch (e) {
             log.error('Could not load URL' + e);

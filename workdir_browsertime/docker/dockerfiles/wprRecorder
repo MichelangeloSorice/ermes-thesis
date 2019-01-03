@@ -1,5 +1,5 @@
 FROM browsertime_custom_base
 
 ## Overriding original entrypoint
-COPY ./customStartWPR_record.sh /customStart.sh
+COPY ./mods/customStartWPR_record.sh /customStart.sh
 ENTRYPOINT ["/customStart.sh"]

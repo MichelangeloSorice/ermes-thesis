@@ -149,23 +149,17 @@ fi
 
 
 ## Section added for Screenshot extraction
-
-if [ -z "${RESULT_DIR}" ]; then
-    echo "Result directory unknown: impossible to extract screenshots from video..."
+echo "Extracting frames from video..."
+if [ -a ./video/1.mp4 ]; then
+    ffmpeg -i ./video/1.mp4 -vf fps=10 ./video/capture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
+    rm ./video/1.mp4
+elif [ -a ${RESULT_DIR}/video/0.mp4 ]; then
+    ffmpeg -i ./video/0.mp4 -vf fps=10 ./video/capture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
+    rm ./video/0.mp4
 else
-    if [ -a ${RESULT_DIR}/video/1.mp4 ]; then
-        echo "Extracting frames from ${RESULT_DIR}"
-        ffmpeg -i ${RESULT_DIR}/video/1.mp4 -vf fps=10 ${RESULT_DIR}/video/capture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
-        rm ${RESULT_DIR}/video/1.mp4
-    elif [ -a ${RESULT_DIR}/video/0.mp4 ]; then
-        echo "Extracting frames from ${RESULT_DIR}"
-        ffmpeg -i ${RESULT_DIR}/video/0.mp4 -vf fps=10 ${RESULT_DIR}/video/capture%05d.jpg -preset superfast -y -hide_banner -loglevel 16
-        rm ${RESULT_DIR}/video/0.mp4
-    else
-        echo "Unable to find the video file in ${RESULT_DIR}"
-    fi
+    echo "Unable to find the video file"
 fi
 
-rm -rf ${RESULT_DIR}/video/images/
+rm -rf ./video/images/
 rm -rf browsertime-results/
-mv ${RESULT_DIR}/video ${RESULT_DIR}/screenshots
+mv ./video ./screenshots
