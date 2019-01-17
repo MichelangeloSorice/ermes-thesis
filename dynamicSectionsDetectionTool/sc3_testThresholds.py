@@ -1,6 +1,6 @@
-# This script exploits the results of the dynamicAectionDetectionTool
+# This script exploits the results of the capture analysis (sc0)
 # Results are evaluated wrt to a range of thresholds of NN0 and PDE and the array representing the final decison
-# about each bloc k is stored with a reference to the NN0 and PDE threshold values on which it was computed
+# about each block is stored with a reference to the NN0 and PDE threshold values on which it was computed
 
 import json
 import sys

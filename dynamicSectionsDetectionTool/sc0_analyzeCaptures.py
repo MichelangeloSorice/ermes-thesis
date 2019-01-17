@@ -1,3 +1,6 @@
+# This script performs comparisons among captures, splitting each capture into basic blocks
+# and subtracting corresponding block. The output is a file containing for each subBlock
+# the count of non zero valued pixels found for each comparison
 
 import json
 import sys
@@ -42,20 +45,6 @@ def subtractBlocksAndCountZeros(imgArrayA, imgArrayB):
     return perBlockResult
 
 
-def computePerBlockResult(perBlockDifference, shape, NN0):
-    isBlockStatic = []
-    blockWidth, blockHeight, nChannels = shape
-
-    # We consider a block static if less than X% (currently 0.5%) of his pixel have not been erased by subtraction
-    threshold = (blockWidth * blockHeight) * 3 * NN0
-
-    for nonZeroCount in perBlockDifference:
-        if nonZeroCount > threshold:
-            isBlockStatic.append(False)
-        else:
-            isBlockStatic.append(True)
-    return isBlockStatic, perBlockDifference
-
 
 def updateResult(nonZeroCounts, previousResult):
     if previousResult['perBlockNN0Counts'] is None:
@@ -91,7 +80,6 @@ def main():
 
     blockHeightPx = sectionDetectionParams['BLOCK']['BLOCK_HEIGHT']
     blockWidthPx = sectionDetectionParams['BLOCK']['BLOCK_WIDTH']
-    thresholds = sectionDetectionParams['THRESHOLDS']
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -125,10 +113,7 @@ def main():
         baseImgSplitted = splittedImgList.pop()
 
     # Now finalResult contains for each block:
-    # - nTimes it was evaluated,
-    # - nTimes it was evaluated Dynamic,
-    # - nonZeroPixelCount for each evaluation
-    # We dump this data into a json file, which will be used as input by the next step of the pipe
+    # an array of integers representing the NN0 count for that block in different comparisons
     finalResult = tmpResult
     with open(workdir + '/input/captureAnalysis.json', 'w+') as f:
         json.dump(finalResult, f, indent=None)

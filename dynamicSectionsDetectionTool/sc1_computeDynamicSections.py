@@ -1,3 +1,6 @@
+# This script performs the actual classification about dynamic and static blocks
+# The decision is taken applying the defined thresholds on the results of the capture analysis produced in sc0
+
 import json
 import sys
 from os.path import join
@@ -72,6 +75,8 @@ def restoreImage(blocksArray, numRow, numCol):
 
 
 def main():
+    # The only input is the working directory which must contain an input subfolder and  a captureAnalysis file
+    # as produced by script sc0
     workdir = sys.argv[1]
 
     with open('./sectionDetectionParams.json') as inputFile:
@@ -83,7 +88,6 @@ def main():
 
     thresholds = sectionDetectionParams['THRESHOLDS']
 
-    # we obtain a
     isBlockDynamic, perBlockPde = computeFinalDecision(captureAnalysisData, thresholds)
     with open(workdir + '/output/finalDecision.json', 'w+') as resultFile:
         finalResult = {
