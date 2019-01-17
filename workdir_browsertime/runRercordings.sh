@@ -12,11 +12,11 @@ if [ ! -d $outputDir ]; then
     mkdir $recordsDir
 fi
 
-echo "Recording ${2} times"
+echo "Recording ${2} times for profile ${4}"
 
 docker run  --cap-add=NET_ADMIN --shm-size=1g \
-            -e RECORD=${2} -e LATENCY=100 \
+            -e RECORD=${2} -e LATENCY=10 \
             -v ${recordsDir}:/tmp/recordsFolder -v ${resultsDir}:/browsertime \
             wpr_recorder:latest $1 -n 1 --screenshot --video=false --visualMetrics=false \
-            --chrome.args=--profile-directory="${4}" \
-            --chrome.args=--user-data-dir="/config/google-chrome"
+            --chrome.args=--password-store=basic \
+            --chrome.args=--user-data-dir=/tmp/rep

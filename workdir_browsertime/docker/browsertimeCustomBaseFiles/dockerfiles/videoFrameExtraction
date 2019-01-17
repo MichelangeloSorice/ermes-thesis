@@ -1,0 +1,5 @@
+FROM browsertime_custom_base
+
+## Overriding original entrypoint
+COPY ./customStart_videoFrameExtraction.sh /customStart.sh
+ENTRYPOINT ["/customStart.sh"]

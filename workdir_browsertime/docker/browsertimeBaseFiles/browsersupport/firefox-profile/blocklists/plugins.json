@@ -1,0 +1,183 @@
+{
+  "data": [
+    {
+      "schema": 1536613346178,
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=1490097",
+        "why": "Old versions of the Flash Player plugin have known vulnerabilities. All users are strongly recommended to check for updates <a href=\"https://get.adobe.com/flashplayer/\">on Adobe's Flash page</a>.",
+        "name": "Flash Player Plugin 30.0.0.113 and older (click-to-play)"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/flashplayer/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "maxVersion": "30.0.0.113",
+          "minVersion": "0",
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "(NPSWF32.*\\.dll)|(NPSWF64.*\\.dll)|(Flash\\ Player\\.plugin)",
+      "id": "832dc9ff-3314-4df2-abcf-7bd65a645371",
+      "last_modified": 1536613417349,
+      "_status": "synced"
+    },
+    {
+      "os": "Linux",
+      "schema": 1536522105055,
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=1490097",
+        "why": "Old versions of the Flash Player plugin have known vulnerabilities. All users are strongly recommended to check for updates <a href=\"https://get.adobe.com/flashplayer/\">on Adobe's Flash page</a>.",
+        "name": "Flash Player Plugin on Linux 30.0.0.113 and older (click-to-play)"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/flashplayer/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "maxVersion": "30.0.0.113",
+          "minVersion": "0",
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "libflashplayer\\.so",
+      "id": "49b843cc-a8fc-4ede-be0c-a0da56d0214f",
+      "last_modified": 1536613346170,
+      "_status": "synced"
+    },
+    {
+      "schema": 1480349144394,
+      "blockID": "p1055",
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=1218880",
+        "who": "All users who have these versions of this plugin installed.",
+        "why": "Versions 12.2.0.162 and earlier of this plugin are affected by a critical security vulnerability that puts users at risk.",
+        "name": "Shockwave for Director 12.2.0.162 and earlier, Mac OS X (click-to-play)",
+        "created": "2015-11-13T14:17:24Z"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/shockwave/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "maxVersion": "12.2.0.162",
+          "minVersion": "0",
+          "targetApplication": [],
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "DirectorShockwave\\.plugin",
+      "id": "da3808c0-b460-e177-1c78-0496b3671480",
+      "last_modified": 1480349148897,
+      "_status": "synced"
+    },
+    {
+      "schema": 1480349144394,
+      "blockID": "p1054",
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=1218880",
+        "who": "All users who have these versions of this plugin installed.",
+        "why": "Versions 12.2.0.162 and earlier of this plugin are affected by a critical security vulnerability that puts users at risk.",
+        "name": "Shockwave for Director 12.2.0.162 and earlier, Windows (click-to-play)",
+        "created": "2015-11-13T14:15:12Z"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/shockwave/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "maxVersion": "12.2.0.162",
+          "minVersion": "0",
+          "targetApplication": [],
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "np32dsw_[0-9]+\\.dll",
+      "id": "5cc4739b-ba83-7a19-4d85-c5362f5e0ccd",
+      "last_modified": 1480349148638,
+      "_status": "synced"
+    },
+    {
+      "schema": 1480349144394,
+      "blockID": "p330",
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=854550",
+        "who": "All Firefox users who have these versions on the Abode Flash plugin installed.",
+        "why": "Old versions of the Adobe Flash plugin are potentially insecure and unstable. All users are recommended to visit our <a href=\"http://www.mozilla.com/plugincheck/\">plugin check</a> page and check for updates.",
+        "name": "Adobe Flash for Linux 10.3.182.* and lower (click-to-play)",
+        "created": "2013-03-26T09:43:25Z"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/flashplayer/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "targetApplication": [
+            {
+              "guid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+              "maxVersion": "*",
+              "minVersion": "19.0a1"
+            },
+            {
+              "guid": "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}",
+              "maxVersion": "*",
+              "minVersion": "2.16a1"
+            },
+            {
+              "guid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+              "maxVersion": "17.0.*",
+              "minVersion": "17.0.4"
+            }
+          ],
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "libflashplayer\\.so",
+      "matchDescription": "^Shockwave Flash (([1-9]\\.[0-9]+)|(10\\.([0-2]|(3 r(([0-9][0-9]?)|1(([0-7][0-9])|8[0-2]))))))( |$)",
+      "id": "abaff0eb-314f-e882-b96c-5c5a4755688f",
+      "last_modified": 1480349147797,
+      "_status": "synced"
+    },
+    {
+      "schema": 1480349144394,
+      "blockID": "p332",
+      "details": {
+        "bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=854550",
+        "who": "All Firefox users who have these versions of the Adobe Flash Player plugin installed.",
+        "why": "Old versions of the Adobe Flash Player plugin are potentially insecure and unstable. All users are recommended to visit our <a href=\"http://www.mozilla.com/plugincheck/\">plugin check</a> to check for updates.",
+        "name": "Adobe Flash for Linux 11.0 to 11.1.* (click-to-play)",
+        "created": "2013-03-26T09:46:14Z"
+      },
+      "enabled": true,
+      "infoURL": "https://get.adobe.com/flashplayer/",
+      "versionRange": [
+        {
+          "severity": 0,
+          "targetApplication": [
+            {
+              "guid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+              "maxVersion": "*",
+              "minVersion": "19.0a1"
+            },
+            {
+              "guid": "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}",
+              "maxVersion": "*",
+              "minVersion": "2.16a1"
+            },
+            {
+              "guid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+              "maxVersion": "17.0.*",
+              "minVersion": "17.0.4"
+            }
+          ],
+          "vulnerabilityStatus": 1
+        }
+      ],
+      "matchFilename": "libflashplayer\\.so",
+      "matchDescription": "^Shockwave Flash 11.(0|1) r[0-9]{1,3}$",
+      "id": "38797744-cb92-1a49-4c81-2a900691fdba",
+      "last_modified": 1480349146047,
+      "_status": "synced"
+    }
+  ]
+}

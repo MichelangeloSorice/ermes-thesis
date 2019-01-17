@@ -1,0 +1,13 @@
+FROM browsertimebase_chromev71:latest
+
+WORKDIR /browsertime
+
+## Overriding customized files of Browsertime src
+COPY mods/lib/support/getViewPort.js /usr/src/app/lib/support/getViewPort.js
+COPY mods/lib/core/seleniumRunner.js /usr/src/app/lib/core/seleniumRunner.js
+COPY mods/lib/screenshot/defaults.js /usr/src/app/lib/screenshot/defaults.js
+COPY mods/lib/screenshot/index.js /usr/src/app/lib/screenshot/index.js
+
+## Adding custom configuration of chrome with the desired profiles set
+RUN mkdir -p /tmp/rep
+COPY /config/chrome-new/* /tmp/rep/

@@ -1,3 +1,0 @@
-FROM sitespeedio/browsertime:latest
-COPY ./cleanerScript.sh /cleanerScript.sh
-ENTRYPOINT ["/cleanerScript.sh"]
