@@ -14,27 +14,38 @@ def main():
     # folder with a screenshots subdirectory
     workdir = sys.argv[1]
 
-    # Retrieving the set of images
+    # Retrieving the set of images filenames and sorting them in alphanumeric order
     screenshotInputFolder = workdir + 'input/screenshots/'
     fileNamesList = [join(screenshotInputFolder, f)
                      for f in listdir(screenshotInputFolder) if isfile(join(screenshotInputFolder, f))]
-    print(fileNamesList)
+    fileNamesList = sorted(fileNamesList, key=lambda fn: int(fn.split('screenshots/')[1].split('.')[0]), reverse=True)
+
+    # Reading images
     imageList = [cv2.imread(file, cv2.IMREAD_UNCHANGED) for file in fileNamesList]
     if len(imageList) < 2:
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
-    # Setting up results container with some basic informations
+    # Setting up results container
     tmpResult = np.zeros((len(imageList), len(imageList)))
 
     rowIndex = 0
     while len(imageList) > 1:
         testImg = imageList.pop()
-        for colIndex, img in enumerate(imageList):
+        print("Test image is: " + fileNamesList.pop())
+        cv2.imshow('image', testImg)
+        cv2.waitKey(0)
+        colIndex = rowIndex
+        for img in reversed(imageList):
+            colIndex += 1
+            cv2.imshow('image', img)
+            cv2.waitKey(0)
             imageDiff = np.absolute(testImg - img)
             distance = round(np.count_nonzero(imageDiff) / imageDiff.size, 3)
-            tmpResult[rowIndex, rowIndex + colIndex + 1] = distance
-            tmpResult[rowIndex + colIndex + 1, rowIndex] = distance
+            print("Distance " + str(distance))
+            tmpResult[rowIndex][colIndex] = distance
+            tmpResult[colIndex][rowIndex] = distance
+            print("Row index " + str(rowIndex) + " colindex " + str(colIndex))
         rowIndex += 1
 
     # Now finalResult contains for each block:
