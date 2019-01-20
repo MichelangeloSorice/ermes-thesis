@@ -106,7 +106,7 @@ def searchPatterns(blockComparisons):
                 state = 0
             if blockComparisons[i] is True and state == 1:
                 verticalCountStatic = 0
-                varticalCountDynamic = 1
+                verticalCountDynamic = 1
                 state = 0
             if blockComparisons[i] is True and state == 2:
                 verticalCountDynamic = 1

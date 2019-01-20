@@ -1,0 +1,18 @@
+{
+  "baseBlockHeight": 20,
+  "baseBlockWidth": 20,
+  "blocksPerRow": 96,
+  "blocksPerColumn": 54,
+  "blockHasChangedThreshold": 0.4,
+  "patternParams": {
+    "consecutivePatternsThreshold": 3,
+    "searchWindow": [
+      26,
+      70
+    ],
+    "pattern": {
+      "consecutiveStaticBlocks": 5,
+      "consecutiveDynamicBlocks": 3
+    }
+  }
+}
