@@ -89,32 +89,38 @@ def performComparisons(imgArrayA, imgArrayB):
 def searchPatterns(blockComparisons):
     # Searching for pattern
     patternCounter = 0
-    for x in range(0, 96):
+    for x in range(26, 70):
         previousBlock = blockComparisons[x]
         if previousBlock is True:
+            verticalCountStatic = 0
+            verticalCountDynamic = 1
             state = 0  # Dynamic Block Found
         else:
+            verticalCountStatic = 1
+            verticalCountDynamic = 0
             state = 1  # Static Block Found
-        verticalCount = 0
         for i in range(x + 96, 5184, 96):
             if blockComparisons[i] is True and state == 0:
-                verticalCount = 0
+                verticalCountDynamic += 1
+                verticalCountStatic = 0
                 state = 0
             if blockComparisons[i] is True and state == 1:
-                verticalCount = 0
+                verticalCountStatic = 0
+                varticalCountDynamic = 1
                 state = 0
             if blockComparisons[i] is True and state == 2:
-                verticalCount = 0
+                verticalCountDynamic = 1
+                verticalCountStatic = 0
                 state = 0
             if blockComparisons[i] is False and state == 0:
-                verticalCount = 1
+                verticalCountStatic = 1
                 state = 2
             if blockComparisons[i] is False and state == 1:
                 state = 1
             if blockComparisons[i] is False and state == 2:
-                verticalCount += 1
+                verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCount >= 5:
+        if state == 2 and verticalCountStatic >= 5 and verticalCountDynamic > 3:
             patternCounter += 1
             if patternCounter == 3:
                 return True
@@ -172,7 +178,7 @@ def main():
                 blockComparisonsResults = performComparisons(img, testImg)
                 # cv2.imshow('compared',restoreImage(img, 54, 96))
                 # cv2.waitKey(0)
-                # computeVisualResult(blockComparisonsResults)
+                #computeVisualResult(blockComparisonsResults)
                 distance = round(np.count_nonzero(blockComparisonsResults) / 5184, 3)
                 print("Distance :" + str(distance))
                 if distance < 0.1:
