@@ -5,13 +5,13 @@
   "blocksPerColumn": 54,
   "blockHasChangedThreshold": 0.4,
   "patternParams": {
-    "consecutivePatternsThreshold": 3,
+    "consecutivePatternsThreshold": 4,
     "searchWindow": [
       26,
       70
     ],
     "pattern": {
-      "consecutiveStaticBlocks": 5,
+      "consecutiveStaticBlocks": 7,
       "consecutiveDynamicBlocks": 3
     }
   }

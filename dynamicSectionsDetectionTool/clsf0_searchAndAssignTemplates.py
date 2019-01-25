@@ -3,12 +3,18 @@
 # the count of non zero valued pixels found for each comparison
 
 import sys
-from os import listdir
-from os.path import isfile, join
+from os import listdir, mkdir
+from os.path import isfile, join, exists
+from shutil import copy, rmtree
 
 import cv2
 import numpy as np
 
+
+def showImageAndLock(name, img):
+    cv2.imshow(name, restoreImage(img, 54, 96))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 # Splits an image into an array of sub-images with shape blockHeight x blockWidth
 def splitImage(img, blockHeight, blockWidth):
@@ -120,9 +126,9 @@ def searchPatterns(blockComparisons):
             if blockComparisons[i] is False and state == 2:
                 verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCountStatic >= 5 and verticalCountDynamic > 3:
+        if state == 2 and verticalCountStatic >= 10 and verticalCountDynamic > 3:
             patternCounter += 1
-            if patternCounter == 3:
+            if patternCounter == 4:
                 return True
         else:
 
@@ -171,44 +177,71 @@ def main():
         testImg = splittedImgList.pop()
         testImgName = int(fileList.pop().split('screenshots/')[1].split('.')[0])
         tplFound = False
-        # cv2.imshow('testing',restoreImage(testImg, 54, 96))
-        # cv2.waitKey(0)
+        tplConfidenceArray = []
+        # showImageAndLock('testing', testImg)
         for tplKey, tplValue in templateCollection.items():
+            tplConfidencePoints =0
             for img in tplValue["images"]:
                 blockComparisonsResults = performComparisons(img, testImg)
-                # cv2.imshow('compared',restoreImage(img, 54, 96))
-                # cv2.waitKey(0)
+                #showImageAndLock('compared', img)
                 #computeVisualResult(blockComparisonsResults)
                 distance = round(np.count_nonzero(blockComparisonsResults) / 5184, 3)
                 print("Distance :" + str(distance))
                 if distance < 0.1:
                     # Images are soo similar they must belong to the same template
-                    tplFound = True
+                    tplConfidencePoints +=1
                     print('Tpl found for similarity')
-                    break
                 elif distance > 0.8:
                     # Images are too different to belong to same template
                     break
                 else:
-                    tplFound = searchPatterns(blockComparisonsResults)
-                    if tplFound:
+                    tplPatternFound = searchPatterns(blockComparisonsResults)
+                    if tplPatternFound:
+                        tplConfidencePoints +=1
                         print('Tpl found for pattern')
-                        break
+                # If we have a match with the gretest part of the template representers
+                # we are pretty sure about our screen to belong to this template
+                if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 5:
+                    tplFound = True
+                    break
             if tplFound:
                 tplValue["images"].append(testImg)
                 tplValue["imgNames"].append(testImgName)
                 break
-        if not tplFound:
-            print('Template not found! creating a new one')
-            lastTplIndex += 1
-            templateCollection["tpl" + str(lastTplIndex)] = {
-                "images": [testImg],
-                "imgNames": [testImgName]
-            }
+            else:
+                tplConfidenceArray.append((tplConfidencePoints / len(tplValue["images"]), tplKey))
 
+        if not tplFound:
+            tplConfidenceArray = [conf for conf in tplConfidenceArray if conf[0] > 0.3]
+            tplConfidenceArray = sorted(tplConfidenceArray, key=lambda conftuple: conftuple[0], reverse=True)
+            if len(tplConfidenceArray) > 0:
+                # Selecting name of template with highest confidence
+                choosenTpl = tplConfidenceArray[0][1]
+                print('Screen assigned to ' + choosenTpl + ' with confidence' + str(tplConfidenceArray[0][0]))
+                templateCollection[choosenTpl]["images"].append(testImg)
+                templateCollection[choosenTpl]["imgNames"].append(testImgName)
+            else:
+                print('Template not found! creating a new one')
+                lastTplIndex += 1
+                templateCollection["tpl" + str(lastTplIndex)] = {
+                    "images": [testImg],
+                    "imgNames": [testImgName]
+                }
+
+    if not exists(workdir + '/output/templates'):
+        mkdir(workdir + '/output/templates')
     for tplName in templateCollection.keys():
         print('Template ' + tplName)
+        tplDir = workdir + '/output/templates/' + tplName + '/'
+        if not exists(tplDir):
+            mkdir(tplDir)
+        else:
+            rmtree(tplDir)
         print(sorted(templateCollection[tplName]["imgNames"]))
+        for name in sorted(templateCollection[tplName]["imgNames"]):
+            copy(workdir + '/input/screenshots/' + str(name) + '.jpg', tplDir + '/' + str(name) + '.jpg')
+
+
 
     # TODO system to exclude images completely different from others
     # TODO improve visual result computation -- binding to number of images
