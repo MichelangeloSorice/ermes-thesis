@@ -4,8 +4,9 @@
 
 import sys
 import time
-from os import listdir
-from os.path import isfile, join
+from os import listdir, mkdir
+from os.path import isfile, join, exists
+from shutil import copy, rmtree
 
 import cv2
 import numpy as np
@@ -172,7 +173,7 @@ def searchBannerPattern(comparison, maxWidth, maxHeight):
         else:
             break
 
-    if possibleBannerHeight >= 2:
+    if possibleBannerHeight >= 3:
         return True, possibleBannerHeight
     return False, 0
 
@@ -242,7 +243,7 @@ def performClustering(imgList, templateCollection, lastTplIndex):
                     unmatchableTplCount += 1
                     break
 
-                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 45], 96)
+                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 40], 96)
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < 0.1:
                     # Images are soo similar they must belong to the same template
@@ -317,7 +318,7 @@ def main():
                 int(imgFileName.split('screenshots/')[1].split('.')[0]))
                for imgFileName in fileList]
 
-    possibleBanner, supposedHeight = preprocessing(imgList)
+    # possibleBanner, supposedHeight = preprocessing(imgList)
     cv2.waitKey(0)
 
     templateCollection = {
@@ -329,7 +330,7 @@ def main():
         }
     }
     lastTplIndex = 0
-    '''
+
     while len(imgList) > 0:
         for tplKey, tplValue in templateCollection.items():
             if len(tplValue["images"]) > tplValue["previousIterationLength"]:
@@ -373,7 +374,7 @@ def main():
         mkdir(tplDir)
         for name in sortedList:
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
-    '''
+
     end = time.time()
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
 
