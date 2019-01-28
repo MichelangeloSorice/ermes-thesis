@@ -3,6 +3,7 @@
 # the count of non zero valued pixels found for each comparison
 
 import sys
+import time
 from os import listdir, mkdir
 from os.path import isfile, join, exists
 from shutil import copy, rmtree
@@ -156,6 +157,8 @@ def main():
         print('There are not enough file in the input folder to perform a meaningful comparison!')
         return 1
 
+    start = time.time()
+    print('++++ Starting execution at ' + str(start))
     baseImgName = fileList.pop()
     baseImgTest = cv2.imread(baseImgName, cv2.IMREAD_UNCHANGED)
 
@@ -197,7 +200,7 @@ def main():
                 else:
                     tplPatternFound = searchPatterns(blockComparisonsResults)
                     if tplPatternFound:
-                        tplConfidencePoints +=1
+                        tplConfidencePoints += 1
                         print('Tpl found for pattern')
                 # If we have a match with the gretest part of the template representers
                 # we are pretty sure about our screen to belong to this template
@@ -228,23 +231,22 @@ def main():
                     "imgNames": [testImgName]
                 }
 
-    if not exists(workdir + '/output/templates'):
-        mkdir(workdir + '/output/templates')
+    if exists(workdir + '/output/templates'):
+        rmtree(workdir + '/output/templates')
+    mkdir(workdir + '/output/templates')
     for tplName in templateCollection.keys():
         print('Template ' + tplName)
-        tplDir = workdir + '/output/templates/' + tplName + '/'
-        if not exists(tplDir):
-            mkdir(tplDir)
-        else:
-            rmtree(tplDir)
         print(sorted(templateCollection[tplName]["imgNames"]))
+        tplDir = workdir + '/output/templates/' + tplName + '/'
+        if exists(tplDir):
+            rmtree(tplDir)
+        mkdir(tplDir)
         for name in sorted(templateCollection[tplName]["imgNames"]):
             copy(workdir + '/input/screenshots/' + str(name) + '.jpg', tplDir + '/' + str(name) + '.jpg')
 
+    end = time.time()
+    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
 
-
-    # TODO system to exclude images completely different from others
-    # TODO improve visual result computation -- binding to number of images
 
 
 # +++++ Script Entrypoint

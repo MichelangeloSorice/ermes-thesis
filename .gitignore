@@ -1,6 +1,6 @@
 .idea
 dynamicSectionsDetectionTool/testIOFolder/*/output
-dynamicSectionsDetectionTool/testIOFolder/TestSuite6_wildWeb
+dynamicSectionsDetectionTool/testIOFolder/*/input/screenshots/*
 dynamicSectionsDetectionTool/randomTests
 dynamicSectionsDetectionTool/unusedStuffWorthKeeping
 resources
