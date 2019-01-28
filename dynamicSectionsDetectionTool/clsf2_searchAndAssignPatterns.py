@@ -4,9 +4,8 @@
 
 import sys
 import time
-from os import listdir, mkdir
-from os.path import isfile, join, exists
-from shutil import copy, rmtree
+from os import listdir
+from os.path import isfile, join
 
 import cv2
 import numpy as np
@@ -87,32 +86,6 @@ def getMatchingRateo(reducedWindow1, reducedWindow2):
     return round(matchingBlocks / len(reducedWindow1), 3)
 
 
-def compareTemplateSummary(comparisonsArray, templateArray):
-    reducedWindow = getReducedWindow(comparisonsArray, [26, 70], [0, 45], 96)
-
-    if templateArray is None:
-        return 0, reducedWindow
-    else:
-        ## Comparing if static blocks match
-        matchingRateo = getMatchingRateo(templateArray, reducedWindow)
-        return matchingRateo, reducedWindow
-
-
-def updateTemplateSummary(reducedWindow, templateCount, templateElements):
-    if templateCount is None:
-        return reducedWindow, [x for x in reducedWindow]
-    else:
-        newCount = [templateCount[i] + reducedWindow[i] for i in range(len(templateCount))]
-        newTemplateArray = []
-        threshold = int(templateElements / 2)
-        for x in range(len(templateCount)):
-            if newCount[x] > threshold:
-                newTemplateArray.append(True)
-            else:
-                newTemplateArray.append(False)
-        return newTemplateArray, newCount
-
-
 # Subtracts corresponding subBlocks of two different images, and counts the amount of non-null pixels
 def performComparisons(imgArrayA, imgArrayB):
     if len(imgArrayA) != len(imgArrayB):
@@ -185,13 +158,68 @@ def showClustersResults(templateCollection):
         print(sorted([tuple[1] for tuple in templateCollection[tplName]["images"]]))
 
 
-def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
+def searchBannerPattern(comparison, maxWidth, maxHeight):
+    possibleBannerHeight = 0
+    beginOfLastRow = maxWidth * (maxHeight - 1)
+    for x in range(beginOfLastRow, 0, -maxWidth):
+        isWholeRowDynamic = True
+        for i in range(x, x + maxWidth, 1):
+            if comparison[i] is False:
+                isWholeRowDynamic = False
+                break
+        if isWholeRowDynamic:
+            possibleBannerHeight += 1
+        else:
+            break
+
+    if possibleBannerHeight >= 2:
+        return True, possibleBannerHeight
+    return False, 0
+
+
+def preprocessing(imgList):
+    listCopy = imgList.copy()
+    votesDictionary = dict()
+    comparisonsCount = 0
+    while len(listCopy) > 1:
+        testImg = (listCopy.pop())[0]
+        print('PREPROC - There are ' + str(len(listCopy)) + ' screens remaining!')
+        for img in listCopy:
+            comparisonsCount += 1
+            comparison = performComparisons(testImg, img[0])
+            possibleBanner, possibleBannerHeight = searchBannerPattern(comparison, 96, 54)
+            if possibleBanner:
+                if not (possibleBannerHeight in votesDictionary):
+                    votesDictionary[possibleBannerHeight] = 1
+                else:
+                    votesDictionary[possibleBannerHeight] += 1
+
+    mostVoted = (None, 0)
+    print('PREPROC - Total comparisons: ' + str(comparisonsCount))
+    for height, votes in votesDictionary.items():
+        print('PREPROC - Height ' + str(height) + ' has been voted: ' + str(votes))
+        if mostVoted[1] < votes:
+            mostVoted = ([height], votes)
+        elif mostVoted[1] == votes:
+            mostVoted[0].append(height)
+            mostVoted[1] += votes
+
+    if mostVoted[1] > 0.35 * comparisonsCount:
+        print('PREPROC - Hey hey hey! We have got a winner!')
+        print(mostVoted)
+        supposedHeight = round(sum(height for height in mostVoted[0]), 1)
+        return True, supposedHeight
+
+    return False, 0
+
+
+def performClustering(imgList, templateCollection, lastTplIndex):
     # First we attempt to assign the image for similarity,
     # in this way bigger and thus more robust templates are computed
     nextIterationImgList = []
-    while len(step0ImgList) >= 1:
-        print('STEP 0 - There are ' + str(len(step0ImgList)) + ' screen to be assigned remaining')
-        testImgTuple = step0ImgList.pop()
+    while len(imgList) >= 1:
+        print('STEP 0 - There are ' + str(len(imgList)) + ' screen to be assigned remaining')
+        testImgTuple = imgList.pop()
         testImg, testImgName = testImgTuple[0], testImgTuple[1]
         tplFound = False
         unmatchableTplCount = 0
@@ -208,8 +236,6 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                     # Images are soo similar they must belong to the same template
                     tplFound = True
                     print('STEP 0 - Tpl found for high level similarity')
-                    tplMatchingRateo, newReducedWindowtemplate = compareTemplateSummary(blockComparisonsResults,
-                                                                                        tplValue["tplSummary"])
                     break
                 if distance > 0.8:
                     # Images are too different to belong to same template
@@ -217,26 +243,10 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                     break
 
                 comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 45], 96)
-                '''
-                if not (tplValue["tplSummary"] is None):
-                    tplMatchingRateo = getMatchingRateo(tplValue["tplSummary"], comparisonReduced)
-                    if tplMatchingRateo > 0.85:
-                        tplFound = True
-                        newReducedWindowtemplate = comparisonReduced
-                        print('STEP 1 - Tpl found for matching tplSummaries')
-                        break
-                    if tplMatchingRateo < 0.1:
-                        unmatchableTplCount += 1
-                        break
-                else:
-                    print('STEP 1 - skipping due to missing tplSummary ')
-                '''
-
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < 0.1:
                     # Images are soo similar they must belong to the same template
                     tplFound = True
-                    newReducedWindowtemplate = comparisonReduced
                     print('STEP 2 - Tpl found for similarity in core')
                     break
                 if distanceForReducedWindow > 0.8:
@@ -249,7 +259,6 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                     tplConfidencePoints += 1
                     if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 5:
                         tplFound = True
-                        newReducedWindowtemplate = comparisonReduced
                         # computeVisualResult(comparisonReduced, 40, 44)
                         print('STEP 3 - Tpl found for pattern')
                         break
@@ -258,9 +267,6 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                 print('+++ Assigning screen: ' + str(testImgName) + ' to ' + str(tplKey))
                 tplValue["images"].append(testImgTuple)
                 tplValue["flagChanged"] = True
-                tplValue["tplSummary"], tplValue["tplCountArray"] = updateTemplateSummary(newReducedWindowtemplate,
-                                                                                          tplValue["tplCountArray"],
-                                                                                          len(tplValue["images"]))
                 break
 
         if not tplFound:
@@ -270,8 +276,6 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                 lastTplIndex += 1
                 templateCollection["tpl" + str(lastTplIndex)] = {
                     "images": [testImgTuple],
-                    "tplSummary": None,
-                    "tplCountArray": None,
                     "flagChanged": False,
                     "previousIterationLength": 0
                 }
@@ -279,105 +283,6 @@ def performStep0Clustering(step0ImgList, templateCollection, lastTplIndex):
                 nextIterationImgList.append(testImgTuple)
 
     return nextIterationImgList, lastTplIndex
-
-
-def performStep1Clustering(step1ImgList, templateCollection, lastTplIndex):
-    step2ImgList = []
-    while len(step1ImgList) >= 1:
-        print('STEP 1 - There are ' + str(len(step1ImgList)) + ' screen to be assigned remaining')
-        testImgTuple = step1ImgList.pop()
-        testImg, testImgName = testImgTuple[0], testImgTuple[1]
-        tplFound = False
-        unmatchableTplCount = 0
-        # As second step we attempt to assign images based on the previously computed
-        # templateSummaries
-        for tplKey, tplValue in templateCollection.items():
-            if not tplValue["flagChanged"]:
-                continue
-
-            # Of course this is meaningful only for templates with 2 or more representers
-            tplElements = len(tplValue["images"])
-            if tplElements < 2:
-                continue
-
-            for imgIndex in range(tplValue["lastAddedIndex"], len(tplValue["images"])):
-                img = tplValue["images"][imgIndex][0]
-                blockComparisonsResults = performComparisons(img, testImg)
-                tplMatchingRateo, newReducedWindowtemplate = compareTemplateSummary(blockComparisonsResults,
-                                                                                    tplValue["tplSummary"])
-                if tplMatchingRateo > 0.85:
-                    tplFound = True
-                    print('STEP 1 - Tpl found for matching tplSummaries')
-                    break
-                if tplMatchingRateo < 0.1:
-                    unmatchableTplCount += 1
-                    break
-            if tplFound:
-                print('STEP 1 - Assigning screen ' + str(testImgName) + ' to ' + str(tplKey))
-                tplValue["images"].append(testImgTuple)
-                tplValue["flagChanged"] = True
-                tplValue["tplSummary"], tplValue["tplCountArray"] = updateTemplateSummary(newReducedWindowtemplate,
-                                                                                          tplValue["tplCountArray"],
-                                                                                          tplElements)
-                break
-        if not tplFound and unmatchableTplCount == len(templateCollection.keys()):
-            # If we found the image to be unmatchable with all currently known templates we create a new tpl for it
-            print('STEP 1 - Unmatchable screen found, creating new template!')
-            lastTplIndex += 1
-            templateCollection["tpl" + str(lastTplIndex)] = {
-                "images": [testImgTuple],
-                "tplSummary": None,
-                "tplCountArray": None,
-                "flagChanged": False,
-                "previousIterationLength": 0
-            }
-        elif not tplFound:
-            step2ImgList.append(testImgTuple)
-
-    return step2ImgList, lastTplIndex
-
-
-def searchForTemplateSummaries(imgList, templateCollection):
-    for tplKey, tplValue in templateCollection.items():
-        # TODO create hashset to track images for which no template can be found
-        if len(tplValue["images"]) == 1 and tplValue["flagChanged"]:
-            print('CORRECTION - Attempting to build tplSummary for single image ' + tplKey)
-            testImgTuple = tplValue["images"][0]
-            # Getting a reduced version of testImage
-            testImgReduced = getReducedWindow(testImgTuple[0], [26, 70], [0, 45], 96)
-            comparisonsArrays = []
-
-            for imgTuple in imgList:
-                imgReduced = getReducedWindow(imgTuple[0], [26, 70], [0, 45], 96)
-                comparison = performComparisons(testImgReduced, imgReduced)
-                percentageOfChangedBlocks = round(np.count_nonzero(comparison) / 1980, 3)
-                comparisonsArrays.append((percentageOfChangedBlocks, comparison, imgTuple))
-
-            if len(comparisonsArrays) < 1:
-                print('CORRECTION - Unable to provide a tplSummary to ' + str(tplKey))
-                continue
-
-            comparisonsArrays = sorted(comparisonsArrays, key=lambda triple: triple[0])
-            selected = comparisonsArrays[0]
-
-            if selected[0] < 0.8:
-                imgTuple, reducedWindow = selected[2], selected[1]
-
-                # Updating tplSummary for tpl
-                print('CORRECTION - Assigning screen ' + str(imgTuple[1]) + ' to ' + str(tplKey))
-                tplValue["images"].append(imgTuple)
-                tplValue["tplSummary"], tplValue["tplCountArray"] = updateTemplateSummary(reducedWindow,
-                                                                                          tplValue["tplCountArray"],
-                                                                                          len(tplValue["images"]))
-                tplValue["flagChanged"] = True
-
-                # Filtering from image list the new assigned images
-                imgList = [img for img in imgList if img[1] != imgTuple[1]]
-            else:
-                print('CORRECTION - Unable to provide a tplSummary to ' + str(
-                    tplKey) + ' as the most similar img has ' + str(selected[0]) + ' of blocks changed')
-
-    return imgList
 
 
 def main():
@@ -412,18 +317,19 @@ def main():
                 int(imgFileName.split('screenshots/')[1].split('.')[0]))
                for imgFileName in fileList]
 
+    possibleBanner, supposedHeight = preprocessing(imgList)
+    cv2.waitKey(0)
+
     templateCollection = {
         "tpl0": {
             "images": [baseImg],
-            "tplSummary": None,
-            "tplCountArray": None,
             "flagChanged": False,
             "previousIterationLength": 0,
             "lastAddedIndex": 0
         }
     }
     lastTplIndex = 0
-
+    '''
     while len(imgList) > 0:
         for tplKey, tplValue in templateCollection.items():
             if len(tplValue["images"]) > tplValue["previousIterationLength"]:
@@ -438,21 +344,7 @@ def main():
 
         # First we attempt to assign the image for similarity,
         # in this way bigger and thus more robust templates are computed
-        imgList, lastTplIndex = performStep0Clustering(imgList, templateCollection, lastTplIndex)
-
-        if len(imgList) == 0:
-            break
-
-        # As second step we attempt to assign images based on the previously computed
-        # templateSummaries
-        #imgList, lastTplIndex = performStep1Clustering(imgList, templateCollection, lastTplIndex)
-
-        if len(imgList) == 0:
-            break
-
-        # Now we want to make sure that all templates have a summary, this does not happen
-        # in those cases in which our template has a single element after step0
-        #imgList = searchForTemplateSummaries(imgList, templateCollection)
+        imgList, lastTplIndex = performClustering(imgList, templateCollection, lastTplIndex)
 
         if len(imgList) == 0:
             break
@@ -463,8 +355,6 @@ def main():
         lastTplIndex += 1
         templateCollection["tpl" + str(lastTplIndex)] = {
             "images": [randomImgTuple],
-            "tplSummary": None,
-            "tplCountArray": None,
             "flagChanged": False,
             "previousIterationLength": 0,
             "lastAddedIndex": 0
@@ -483,7 +373,7 @@ def main():
         mkdir(tplDir)
         for name in sortedList:
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
-
+    '''
     end = time.time()
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
 

@@ -1,6 +1,7 @@
 .idea
 dynamicSectionsDetectionTool/testIOFolder/*/output
-dynamicSectionsDetectionTool/testIOFolder/*/input/screenshots/*
+dynamicSectionsDetectionTool/testIOFolder/*/input/screenshots
+dynamicSectionsDetectionTool/testIOFolder/*/input/captureAnalysis.json
 dynamicSectionsDetectionTool/randomTests
 dynamicSectionsDetectionTool/unusedStuffWorthKeeping
 resources
