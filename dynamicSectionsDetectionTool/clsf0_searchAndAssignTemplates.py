@@ -2,6 +2,7 @@
 # and subtracting corresponding block. The output is a file containing for each subBlock
 # the count of non zero valued pixels found for each comparison
 
+import json
 import sys
 import time
 from os import listdir, mkdir
@@ -70,6 +71,20 @@ def computeVisualResult(isBlockDynamic):
     cv2.imshow('fig', res)
     cv2.waitKey(0)
     return res
+
+
+def showClustersResults(templateCollection, dumpFile=None):
+    for tplName in templateCollection.keys():
+        print('Template ' + tplName)
+        print(sorted([imgName for imgName in templateCollection[tplName]["imgNames"]]))
+
+    if not dumpFile is None:
+        jsonObj = {}
+        for key, value in templateCollection.items():
+            jsonObj[key] = sorted([imgName for imgName in value["imgNames"]])
+        with open(dumpFile, 'w+') as f:
+            json.dump(jsonObj, f, indent=4)
+            f.close()
 
 
 # Subtracts corresponding subBlocks of two different images, and counts the amount of non-null pixels
@@ -235,8 +250,6 @@ def main():
         rmtree(workdir + '/output/templates')
     mkdir(workdir + '/output/templates')
     for tplName in templateCollection.keys():
-        print('Template ' + tplName)
-        print(sorted(templateCollection[tplName]["imgNames"]))
         tplDir = workdir + '/output/templates/' + tplName + '/'
         if exists(tplDir):
             rmtree(tplDir)
@@ -244,6 +257,7 @@ def main():
         for name in sorted(templateCollection[tplName]["imgNames"]):
             copy(workdir + '/input/screenshots/' + str(name) + '.jpg', tplDir + '/' + str(name) + '.jpg')
 
+    showClustersResults(templateCollection, workdir + '/output/clsf0_tplSummary.json')
     end = time.time()
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
 

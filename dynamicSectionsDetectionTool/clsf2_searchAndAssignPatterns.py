@@ -2,6 +2,7 @@
 # and subtracting corresponding block. The output is a file containing for each subBlock
 # the count of non zero valued pixels found for each comparison
 
+import json
 import sys
 import time
 from os import listdir, mkdir
@@ -153,10 +154,18 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
     return False
 
 
-def showClustersResults(templateCollection):
+def showClustersResults(templateCollection, dumpFile=None):
     for tplName in templateCollection.keys():
         print('Template ' + tplName)
         print(sorted([tuple[1] for tuple in templateCollection[tplName]["images"]]))
+
+    if not dumpFile is None:
+        jsonObj = {}
+        for key, value in templateCollection.items():
+            jsonObj[key] = sorted([tuple[1] for tuple in value["images"]])
+        with open(dumpFile, 'w+') as f:
+            json.dump(jsonObj, f, indent=4)
+            f.close()
 
 
 def searchBannerPattern(comparison, maxWidth, maxHeight):
@@ -243,7 +252,7 @@ def performClustering(imgList, templateCollection, lastTplIndex):
                     unmatchableTplCount += 1
                     break
 
-                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 40], 96)
+                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 54], 96)
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < 0.1:
                     # Images are soo similar they must belong to the same template
@@ -255,7 +264,7 @@ def performClustering(imgList, templateCollection, lastTplIndex):
                     unmatchableTplCount += 1
                     break
 
-                tplPatternFound = searchPatterns(blockComparisonsResults, [26, 70], [0, 40], 96)
+                tplPatternFound = searchPatterns(blockComparisonsResults, [26, 70], [0, 54], 96)
                 if tplPatternFound:
                     tplConfidencePoints += 1
                     if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 5:
@@ -318,6 +327,7 @@ def main():
                 int(imgFileName.split('screenshots/')[1].split('.')[0]))
                for imgFileName in fileList]
 
+    # Here is a mechanism to find out the presence of low level banners
     # possibleBanner, supposedHeight = preprocessing(imgList)
     cv2.waitKey(0)
 
@@ -362,7 +372,6 @@ def main():
         }
 
     # Organizing and emitting results
-    showClustersResults(templateCollection)
     if exists(workdir + '/output/templates'):
         rmtree(workdir + '/output/templates')
     mkdir(workdir + '/output/templates')
@@ -375,6 +384,7 @@ def main():
         for name in sortedList:
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
 
+    showClustersResults(templateCollection, workdir + '/output/clsf2_tplSummary.json')
     end = time.time()
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
 
