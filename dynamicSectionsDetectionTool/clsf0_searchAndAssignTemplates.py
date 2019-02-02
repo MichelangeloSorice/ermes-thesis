@@ -142,7 +142,7 @@ def searchPatterns(blockComparisons):
             if blockComparisons[i] is False and state == 2:
                 verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCountStatic >= 10 and verticalCountDynamic > 3:
+        if state == 2 and verticalCountStatic >= 5 and verticalCountDynamic > 3:
             patternCounter += 1
             if patternCounter == 4:
                 return True

@@ -144,9 +144,9 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
             if blockComparisons[i] is False and state == 2:
                 verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCountStatic >= 3 and verticalCountDynamic > 3:
+        if state == 2 and verticalCountStatic >= 5 and verticalCountDynamic > 3:
             patternCounter += 1
-            if patternCounter == 10:
+            if patternCounter == 5:
                 return True
         else:
             patternCounter = 0
@@ -252,7 +252,7 @@ def performClustering(imgList, templateCollection, lastTplIndex):
                     unmatchableTplCount += 1
                     break
 
-                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 54], 96)
+                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 50], 96)
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < 0.1:
                     # Images are soo similar they must belong to the same template

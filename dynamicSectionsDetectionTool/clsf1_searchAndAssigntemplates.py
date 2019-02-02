@@ -171,7 +171,7 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
                 state = 2
         if state == 2 and verticalCountStatic >= 3 and verticalCountDynamic > 3:
             patternCounter += 1
-            if patternCounter == 10:
+            if patternCounter == 7:
                 return True
         else:
             patternCounter = 0
