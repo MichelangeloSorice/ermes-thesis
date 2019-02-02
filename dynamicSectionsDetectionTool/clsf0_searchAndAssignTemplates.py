@@ -207,7 +207,7 @@ def main():
                 print("Distance :" + str(distance))
                 if distance < 0.1:
                     # Images are soo similar they must belong to the same template
-                    tplConfidencePoints +=1
+                    tplConfidencePoints += 1
                     print('Tpl found for similarity')
                 elif distance > 0.8:
                     # Images are too different to belong to same template

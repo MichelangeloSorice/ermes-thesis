@@ -11,10 +11,11 @@ from shutil import copy, rmtree
 
 import cv2
 import numpy as np
+from random import shuffle
 
 
-def showImageAndLock(name, img):
-    cv2.imshow(name, restoreImage(img, 54, 96))
+def showImageAndLock(name, img, numRow=54, numCol=96):
+    cv2.imshow(name, restoreImage(img, numRow, numCol))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -144,9 +145,9 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
             if blockComparisons[i] is False and state == 2:
                 verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCountStatic >= 5 and verticalCountDynamic > 3:
+        if state == 2 and verticalCountStatic >= 8 and verticalCountDynamic > 4:
             patternCounter += 1
-            if patternCounter == 5:
+            if patternCounter == 6:
                 return True
         else:
             patternCounter = 0
@@ -223,7 +224,7 @@ def preprocessing(imgList):
     return False, 0
 
 
-def performClustering(imgList, templateCollection, lastTplIndex):
+def performClustering(imgList, templateCollection, lastTplIndex, test=False):
     # First we attempt to assign the image for similarity,
     # in this way bigger and thus more robust templates are computed
     nextIterationImgList = []
@@ -232,6 +233,10 @@ def performClustering(imgList, templateCollection, lastTplIndex):
         testImgTuple = imgList.pop()
         testImg, testImgName = testImgTuple[0], testImgTuple[1]
         tplFound = False
+
+        if test:
+            showImageAndLock('testimg', testImg)
+
         unmatchableTplCount = 0
         for tplKey, tplValue in templateCollection.items():
             if not tplValue["flagChanged"]:
@@ -240,37 +245,47 @@ def performClustering(imgList, templateCollection, lastTplIndex):
             for imgIndex in range(tplValue["lastAddedIndex"], len(tplValue["images"])):
                 img = tplValue["images"][imgIndex][0]
                 blockComparisonsResults = performComparisons(img, testImg)
+
+                if test:
+                    showImageAndLock('img', img)
+                    computeVisualResult(blockComparisonsResults)
+
                 distance = round(np.count_nonzero(blockComparisonsResults) / len(blockComparisonsResults), 3)
 
                 if distance < 0.1:
                     # Images are soo similar they must belong to the same template
                     tplFound = True
-                    print('STEP 0 - Tpl found for high level similarity')
+                    print('STEP 0 - Tpl found for high level similarity with ' + str(tplValue["images"][imgIndex][1]))
                     break
                 if distance > 0.8:
                     # Images are too different to belong to same template
                     unmatchableTplCount += 1
                     break
 
-                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 70], [0, 50], 96)
+                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 66], [3, 54], 96)
+
+                if test:
+                    computeVisualResult(comparisonReduced, 51, 40)
+
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
-                if distanceForReducedWindow < 0.1:
+                if distanceForReducedWindow < 0.2:
                     # Images are soo similar they must belong to the same template
                     tplFound = True
-                    print('STEP 2 - Tpl found for similarity in core')
+                    print('STEP 2 - Tpl found for similarity in core ' + str(tplValue["images"][imgIndex][1]))
                     break
-                if distanceForReducedWindow > 0.8:
+                if distanceForReducedWindow > 0.7:
                     # Images are too different to belong to same template
                     unmatchableTplCount += 1
                     break
 
-                tplPatternFound = searchPatterns(blockComparisonsResults, [26, 70], [0, 54], 96)
+                tplPatternFound = searchPatterns(blockComparisonsResults, [26, 70], [0, 40], 96)
                 if tplPatternFound:
                     tplConfidencePoints += 1
-                    if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 5:
+                    if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 6:
                         tplFound = True
                         # computeVisualResult(comparisonReduced, 40, 44)
-                        print('STEP 3 - Tpl found for pattern')
+                        print('STEP 3 - Tpl found for pattern ' + str(tplValue["images"][imgIndex][1]))
+                        print(tplConfidencePoints)
                         break
 
             if tplFound:
@@ -302,8 +317,7 @@ def main():
 
     blockHeightPx = 20
     blockWidthPx = 20
-    numberOfBlocksPerRow = 96  # 1920 = 48x40
-    numberOfBlocksPerColumn = 54  # 1080 = 27x40
+
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -317,6 +331,7 @@ def main():
     start = time.time()
     print('++++ Starting execution at ' + str(start))
 
+    #shuffle(fileList)
     baseImgName = fileList.pop()
     baseImgTest = cv2.imread(baseImgName, cv2.IMREAD_UNCHANGED)
     baseImg = (splitImage(baseImgTest, blockHeightPx, blockWidthPx),

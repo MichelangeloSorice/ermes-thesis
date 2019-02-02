@@ -11,11 +11,6 @@ import cv2
 import numpy as np
 
 
-def showImageAndLock(name, img):
-    cv2.imshow(name, restoreImage(img, 54, 96))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
 
 # Splits an image into an array of sub-images with shape blockHeight x blockWidth
 def splitImage(img, blockHeight, blockWidth):
@@ -34,42 +29,7 @@ def splitImage(img, blockHeight, blockWidth):
     return blocksArray
 
 
-# Code for recreating the image for test sake
-def restoreImage(blocksArray, numRow, numCol):
-    restoredImg = []
 
-    for x in range(numRow):
-        rowImage = blocksArray[x * numCol]
-        base = x * numCol
-        for y in range(1, numCol):
-            rowImage = np.concatenate((rowImage, blocksArray[base + y]), 1)
-        if x == 0:
-            restoredImg = rowImage
-        else:
-            restoredImg = np.concatenate((restoredImg, rowImage), 0)
-
-    return restoredImg
-
-
-def computeVisualResult(isBlockDynamic):
-    # Generating black and white blocks with correct shape
-    blockHeight, blockWidth = 20, 20
-    numRow, numCol = 54, 96
-    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock[:, :, :] = 255
-
-    visualResultBlocksArray = [];
-    for decision in isBlockDynamic:
-        if decision is True:
-            visualResultBlocksArray.append(blackBlock)
-        else:
-            visualResultBlocksArray.append(whiteBlock)
-
-    res = restoreImage(visualResultBlocksArray, numRow, numCol)
-    cv2.imshow('fig', res)
-    cv2.waitKey(0)
-    return res
 
 
 def showClustersResults(templateCollection, dumpFile=None):
@@ -131,7 +91,8 @@ def compareSummaries(base, tested):
             'matchScore': round(bestScore[0] / len(baseTpl), 3)
         }
         # Deleting the entry associated to the best matcher
-        del tested[bestScore[2]]
+        if not bestScore[2] is None:
+            del tested[bestScore[2]]
 
     result['overallComparison'] = {
         'correctlyClassifiedImgs': round(correctlyClassifiedImgs / totalImgs, 3),
