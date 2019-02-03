@@ -13,8 +13,20 @@ import cv2
 import numpy as np
 from random import shuffle
 
+# Global Variables
+blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = 0, 0, 0, 0,
 
-def showImageAndLock(name, img, numRow=54, numCol=96):
+
+def setBlockGlobalVariables(paramsList):
+    global blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn
+    blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = paramsList.values()
+
+
+def showImageAndLock(name, img, numRow=None, numCol=None):
+    if numRow is None:
+        numRow = blocksPerColumn
+    if numCol is None:
+        numCol = blocksPerRow
     cv2.imshow(name, restoreImage(img, numRow, numCol))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -54,14 +66,18 @@ def restoreImage(blocksArray, numRow, numCol):
     return restoredImg
 
 
-def computeVisualResult(isBlockDynamic, numRow=54, numCol=96):
+def computeVisualResult(isBlockDynamic, numRow=None, numCol=None):
     # Generating black and white blocks with correct shape
-    blockHeight, blockWidth = 20, 20
-    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
+    blackBlock = np.zeros((blockHeightPx, blockWidthPx, 3), dtype=np.uint8)
+    whiteBlock = np.ones((blockHeightPx, blockWidthPx, 3), dtype=np.uint8)
     whiteBlock[:, :, :] = 255
 
-    visualResultBlocksArray = [];
+    if numRow is None:
+        numRow = blocksPerColumn
+    if numCol is None:
+        numCol = blocksPerRow
+
+    visualResultBlocksArray = []
     for decision in isBlockDynamic:
         if decision is True:
             visualResultBlocksArray.append(blackBlock)
@@ -74,8 +90,10 @@ def computeVisualResult(isBlockDynamic, numRow=54, numCol=96):
     return res
 
 
-def getReducedWindow(comparisonsArray, width, height, maxWidth):
+def getReducedWindow(comparisonsArray, width, height, maxWidth=None):
     reducedWindow = []
+    if maxWidth is None:
+        maxWidth = blocksPerRow
     # Getting reduced view of things
     ## width 26-70, height 0-32 --- x ranges from 26 to 26 + 32x96 +1
     verticalStep, limit, horizontalStep = maxWidth, width[0] + maxWidth * (height[1] - height[0]), width[1] - width[0]
@@ -90,19 +108,21 @@ def getMatchingRateo(reducedWindow1, reducedWindow2):
 
 
 # Subtracts corresponding subBlocks of two different images, and counts the amount of non-null pixels
-def performComparisons(imgArrayA, imgArrayB):
+def performComparisons(imgArrayA, imgArrayB, blockHasChangedThreshold):
     if len(imgArrayA) != len(imgArrayB):
         print('Impossible to compare image blocks, input images of different sizes...')
         return -1
 
-    limit = 20 * 8  # 50% del blocco cambiata
+    # The threshold is the number of pixels per block * the percentage of the block that must change to
+    # consider the whole block as changed
+    threshold = (blockHeightPx * blockWidthPx) * blockHasChangedThreshold
     hasBlockChanged = []
 
     for index, blockFromA in enumerate(imgArrayA):
         absoluteDiff = np.absolute(blockFromA - imgArrayB[index])
         # The total count of non zero valued pixels over the 3 channels
         nonZeroCount = np.count_nonzero(absoluteDiff)
-        if nonZeroCount > limit:
+        if nonZeroCount > threshold:
             hasBlockChanged.append(True)
         else:
             hasBlockChanged.append(False)
@@ -110,11 +130,16 @@ def performComparisons(imgArrayA, imgArrayB):
     return hasBlockChanged
 
 
-def searchPatterns(blockComparisons, width, height, maxWidth):
+def searchPatterns(blockComparisons, patternParams, maxWidth=None):
+    if maxWidth is None:
+        maxWidth = blocksPerRow
+    consecutiveSubPatternsThreshold, consecutiveStaticBlocksInSubPattern, consecutiveDynamicBlocksInSubPattern, \
+    searchWindow = patternParams.values()
     # Searching for pattern
     patternCounter = 0
-    limit = maxWidth * (height[1] - height[0])
-    for x in range(width[0], width[1]):
+    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow[0], searchWindow[1]
+    limit = maxWidth * (windowYEnd - windowdYStart)
+    for x in range(windowXStart, windowXEnd):
         previousBlock = blockComparisons[x]
         if previousBlock is True:
             verticalCountStatic = 0
@@ -145,9 +170,11 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
             if blockComparisons[i] is False and state == 2:
                 verticalCountStatic += 1
                 state = 2
-        if state == 2 and verticalCountStatic >= 8 and verticalCountDynamic > 4:
+        if state == 2 \
+                and verticalCountStatic >= consecutiveStaticBlocksInSubPattern \
+                and verticalCountDynamic > consecutiveDynamicBlocksInSubPattern:
             patternCounter += 1
-            if patternCounter == 6:
+            if patternCounter == consecutiveSubPatternsThreshold:
                 return True
         else:
             patternCounter = 0
@@ -158,9 +185,9 @@ def searchPatterns(blockComparisons, width, height, maxWidth):
 def showClustersResults(templateCollection, dumpFile=None):
     for tplName in templateCollection.keys():
         print('Template ' + tplName)
-        print(sorted([tuple[1] for tuple in templateCollection[tplName]["images"]]))
+        print(sorted([imgTuple[1] for imgTuple in templateCollection[tplName]["images"]]))
 
-    if not dumpFile is None:
+    if dumpFile is not None:
         jsonObj = {}
         for key, value in templateCollection.items():
             jsonObj[key] = sorted([tuple[1] for tuple in value["images"]])
@@ -169,7 +196,7 @@ def showClustersResults(templateCollection, dumpFile=None):
             f.close()
 
 
-def searchBannerPattern(comparison, maxWidth, maxHeight):
+def searchBannerPattern(comparison, maxWidth=blocksPerRow, maxHeight=blocksPerColumn):
     possibleBannerHeight = 0
     beginOfLastRow = maxWidth * (maxHeight - 1)
     for x in range(beginOfLastRow, 0, -maxWidth):
@@ -198,7 +225,7 @@ def preprocessing(imgList):
         for img in listCopy:
             comparisonsCount += 1
             comparison = performComparisons(testImg, img[0])
-            possibleBanner, possibleBannerHeight = searchBannerPattern(comparison, 96, 54)
+            possibleBanner, possibleBannerHeight = searchBannerPattern(comparison)
             if possibleBanner:
                 if not (possibleBannerHeight in votesDictionary):
                     votesDictionary[possibleBannerHeight] = 1
@@ -224,27 +251,36 @@ def preprocessing(imgList):
     return False, 0
 
 
-def performClustering(imgList, templateCollection, lastTplIndex, test=False):
-    # First we attempt to assign the image for similarity,
-    # in this way bigger and thus more robust templates are computed
+def performClustering(imgList, templateCollection, lastTplIndex, clusteringThresholds, patternParams, test=False):
     nextIterationImgList = []
+    # expanding thresholds parameters:
+    blockHasChangedThreshold, \
+    highLvl_minDistance, highLvl_maxDistance, \
+    core_minDistance, core_maxDistance, core_window = clusteringThresholds.values()
+
     while len(imgList) >= 1:
-        print('STEP 0 - There are ' + str(len(imgList)) + ' screen to be assigned remaining')
+        print('STEP 0 - There are ' + str(len(imgList)) + ' screens to be tested for this iteration')
         testImgTuple = imgList.pop()
         testImg, testImgName = testImgTuple[0], testImgTuple[1]
         tplFound = False
 
         if test:
-            showImageAndLock('testimg', testImg)
+            showImageAndLock('testImg', testImg)
 
+        # Counts down how many tpls have been judged to be unmatchable with the tested img to decide wether
+        # it is convinient or not to assign it to a new template
         unmatchableTplCount = 0
+
+        # We test our image against all newly added elements of each template attempting to assign it
         for tplKey, tplValue in templateCollection.items():
+            # If the tpl has not changed from last iteration there is no need to evalute it
             if not tplValue["flagChanged"]:
                 continue
+
             tplConfidencePoints = 0
             for imgIndex in range(tplValue["lastAddedIndex"], len(tplValue["images"])):
                 img = tplValue["images"][imgIndex][0]
-                blockComparisonsResults = performComparisons(img, testImg)
+                blockComparisonsResults = performComparisons(img, testImg, blockHasChangedThreshold)
 
                 if test:
                     showImageAndLock('img', img)
@@ -252,39 +288,40 @@ def performClustering(imgList, templateCollection, lastTplIndex, test=False):
 
                 distance = round(np.count_nonzero(blockComparisonsResults) / len(blockComparisonsResults), 3)
 
-                if distance < 0.1:
+                if distance < highLvl_minDistance:
                     # Images are soo similar they must belong to the same template
                     tplFound = True
                     print('STEP 0 - Tpl found for high level similarity with ' + str(tplValue["images"][imgIndex][1]))
                     break
-                if distance > 0.8:
+                if distance > highLvl_maxDistance:
                     # Images are too different to belong to same template
                     unmatchableTplCount += 1
                     break
 
-                comparisonReduced = getReducedWindow(blockComparisonsResults, [26, 66], [3, 54], 96)
+                # core_window[0] contains window width span core_window[1] window height span
+                comparisonReduced = getReducedWindow(blockComparisonsResults, core_window[0], core_window[1])
 
                 if test:
-                    computeVisualResult(comparisonReduced, 51, 40)
+                    computeVisualResult(comparisonReduced,
+                                        core_window[1][1] - core_window[1][0], core_window[0][1] - core_window[0][0])
 
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
-                if distanceForReducedWindow < 0.2:
+                if distanceForReducedWindow < core_minDistance:
                     # Images are soo similar they must belong to the same template
                     tplFound = True
-                    print('STEP 2 - Tpl found for similarity in core ' + str(tplValue["images"][imgIndex][1]))
+                    print('STEP 2 - Tpl found for similarity in core with ' + str(tplValue["images"][imgIndex][1]))
                     break
-                if distanceForReducedWindow > 0.7:
+                if distanceForReducedWindow > core_maxDistance:
                     # Images are too different to belong to same template
                     unmatchableTplCount += 1
                     break
 
-                tplPatternFound = searchPatterns(blockComparisonsResults, [26, 70], [0, 40], 96)
+                tplPatternFound = searchPatterns(blockComparisonsResults, patternParams)
                 if tplPatternFound:
                     tplConfidencePoints += 1
                     if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 6:
                         tplFound = True
-                        # computeVisualResult(comparisonReduced, 40, 44)
-                        print('STEP 3 - Tpl found for pattern ' + str(tplValue["images"][imgIndex][1]))
+                        print('STEP 3 - Tpl found for pattern with ' + str(tplValue["images"][imgIndex][1]))
                         print(tplConfidencePoints)
                         break
 
@@ -315,9 +352,19 @@ def main():
     # folder with a screenshots subdirectory
     workdir = sys.argv[1]
 
-    blockHeightPx = 20
-    blockWidthPx = 20
+    paramsFile = './parametersFiles/default_clsfParams.json'
+    try:
+        paramsFile = './parametersFiles/' + sys.argv[2]
+        print('+++++ Using custom params file ' + sys.argv[2])
+    except:
+        print('+++++ Using default parameters')
+    with open(paramsFile, 'r') as ParamsFile:
+        parameters = json.load(ParamsFile)
+        ParamsFile.close()
 
+    # Setting up some global variable with blocks base information
+    setBlockGlobalVariables(parameters["blockParams"])
+    print(str(blockWidthPx)+''+str(blockHeightPx)+''+str(blocksPerColumn)+''+str(blocksPerRow))
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -331,33 +378,39 @@ def main():
     start = time.time()
     print('++++ Starting execution at ' + str(start))
 
-    #shuffle(fileList)
+    # Possible to use it to randomize examination order?
+    # shuffle(fileList)
+
     baseImgName = fileList.pop()
     baseImgTest = cv2.imread(baseImgName, cv2.IMREAD_UNCHANGED)
-    baseImg = (splitImage(baseImgTest, blockHeightPx, blockWidthPx),
-               int(baseImgName.split('screenshots/')[1].split('.')[0]))
+    # Each img is stored as a tuple (splittedImg, imgName)
+    baseImgTuple = (splitImage(baseImgTest, blockHeightPx, blockWidthPx),
+                    int(baseImgName.split('screenshots/')[1].split('.')[0]))
 
     # Getting a splitted version of all images
     imgList = [(splitImage(cv2.imread(imgFileName, cv2.IMREAD_UNCHANGED), blockHeightPx, blockWidthPx),
-                int(imgFileName.split('screenshots/')[1].split('.')[0]))
-               for imgFileName in fileList]
+                int(imgFileName.split('screenshots/')[1].split('.')[0])) for imgFileName in fileList]
 
     # Here is a mechanism to find out the presence of low level banners
     # possibleBanner, supposedHeight = preprocessing(imgList)
-    cv2.waitKey(0)
 
     templateCollection = {
         "tpl0": {
-            "images": [baseImg],
+            "images": [baseImgTuple],
+            # True if tpl has changed (new members added during last iteration)
             "flagChanged": False,
             "previousIterationLength": 0,
+            # Keeps the index of the first addition of the previous iteration, used to identify
+            # all new added members
             "lastAddedIndex": 0
         }
     }
+    # Index of the most recently added tpl
     lastTplIndex = 0
 
     while len(imgList) > 0:
-        for tplKey, tplValue in templateCollection.items():
+        # Updating changedFlag and lastAddedIndex for each tpl
+        for tplValue in templateCollection.values():
             if len(tplValue["images"]) > tplValue["previousIterationLength"]:
                 tplValue["flagChanged"] = True
                 tplValue["lastAddedIndex"] = tplValue["previousIterationLength"]
@@ -365,26 +418,28 @@ def main():
             else:
                 tplValue["flagChanged"] = False
 
+        # Show current classification
         showClustersResults(templateCollection)
-        startingLenght = len(imgList)
 
-        # First we attempt to assign the image for similarity,
-        # in this way bigger and thus more robust templates are computed
-        imgList, lastTplIndex = performClustering(imgList, templateCollection, lastTplIndex)
-
+        # Here we perform clustering operations
+        startingLength = len(imgList)
+        imgList, lastTplIndex = performClustering(imgList, templateCollection, lastTplIndex,
+                                                  parameters["clusteringParams"], parameters["patternParams"])
+        # Exit condition
         if len(imgList) == 0:
             break
-        if len(imgList) != startingLenght:
+        # In caso no image has been assigned to a teplate during the whole iteration we create a new tpl
+        if len(imgList) != startingLength:
             continue
-
-        randomImgTuple = imgList.pop()
-        lastTplIndex += 1
-        templateCollection["tpl" + str(lastTplIndex)] = {
-            "images": [randomImgTuple],
-            "flagChanged": False,
-            "previousIterationLength": 0,
-            "lastAddedIndex": 0
-        }
+        else:
+            randomImgTuple = imgList.pop()
+            lastTplIndex += 1
+            templateCollection["tpl" + str(lastTplIndex)] = {
+                "images": [randomImgTuple],
+                "flagChanged": False,
+                "previousIterationLength": 0,
+                "lastAddedIndex": 0
+            }
 
     # Organizing and emitting results
     if exists(workdir + '/output/templates'):
