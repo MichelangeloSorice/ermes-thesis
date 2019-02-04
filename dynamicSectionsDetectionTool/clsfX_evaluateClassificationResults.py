@@ -111,7 +111,6 @@ def main():
     mode = sys.argv[2]
 
     if mode == 'optimal':
-        print('Here we go')
         with open(workdir + '/input/optimalClassification.json', 'r') as f:
             optimalClusters = json.load(f)
             f.close()
@@ -132,8 +131,7 @@ def main():
                 print(evaluationResults)
             json.dump(evaluationResults, evaluationResultsFile, indent=2)
 
-    if mode is 'compare':
-        res1, res2 = sys.argv[3], sys.argv[4]
+
 
 
 # +++++ Script Entrypoint

@@ -137,7 +137,7 @@ def searchPatterns(blockComparisons, patternParams, maxWidth=None):
     searchWindow = patternParams.values()
     # Searching for pattern
     patternCounter = 0
-    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow[0], searchWindow[1]
+    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow[0][0], searchWindow[0][1], searchWindow[1][0], searchWindow[1][1]
     limit = maxWidth * (windowYEnd - windowdYStart)
     for x in range(windowXStart, windowXEnd):
         previousBlock = blockComparisons[x]
@@ -354,7 +354,7 @@ def main():
 
     paramsFile = './parametersFiles/default_clsfParams.json'
     try:
-        paramsFile = './parametersFiles/' + sys.argv[2]
+        paramsFile = sys.argv[2]
         print('+++++ Using custom params file ' + sys.argv[2])
     except:
         print('+++++ Using default parameters')
