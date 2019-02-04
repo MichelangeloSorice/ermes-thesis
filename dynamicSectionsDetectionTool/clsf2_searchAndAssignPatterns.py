@@ -137,7 +137,7 @@ def searchPatterns(blockComparisons, patternParams, maxWidth=None):
     searchWindow = patternParams.values()
     # Searching for pattern
     patternCounter = 0
-    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow[0][0], searchWindow[0][1], searchWindow[1][0], searchWindow[1][1]
+    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow.values()
     limit = maxWidth * (windowYEnd - windowdYStart)
     for x in range(windowXStart, windowXEnd):
         previousBlock = blockComparisons[x]
@@ -196,9 +196,14 @@ def showClustersResults(templateCollection, dumpFile=None):
             f.close()
 
 
-def searchBannerPattern(comparison, maxWidth=blocksPerRow, maxHeight=blocksPerColumn):
-    possibleBannerHeight = 0
+def searchBannerPattern(comparison, maxWidth=None, maxHeight=None):
+    if maxWidth is None:
+        maxWidth = blocksPerRow
+    if maxHeight is None:
+        maxHeight = blocksPerColumn
+
     beginOfLastRow = maxWidth * (maxHeight - 1)
+    possibleBannerHeight = 0
     for x in range(beginOfLastRow, 0, -maxWidth):
         isWholeRowDynamic = True
         for i in range(x, x + maxWidth, 1):
@@ -298,12 +303,12 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                     unmatchableTplCount += 1
                     break
 
-                # core_window[0] contains window width span core_window[1] window height span
-                comparisonReduced = getReducedWindow(blockComparisonsResults, core_window[0], core_window[1])
+                # core_window contains window horizontal and vertical start and end
+                xStart, xEnd, yStart, yEnd = core_window.values()
+                comparisonReduced = getReducedWindow(blockComparisonsResults, [xStart, xEnd], [yStart, yEnd])
 
                 if test:
-                    computeVisualResult(comparisonReduced,
-                                        core_window[1][1] - core_window[1][0], core_window[0][1] - core_window[0][0])
+                    computeVisualResult(comparisonReduced, yEnd - yStart, xEnd - xStart)
 
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < core_minDistance:
@@ -364,7 +369,6 @@ def main():
 
     # Setting up some global variable with blocks base information
     setBlockGlobalVariables(parameters["blockParams"])
-    print(str(blockWidthPx)+''+str(blockHeightPx)+''+str(blocksPerColumn)+''+str(blocksPerRow))
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -392,7 +396,7 @@ def main():
                 int(imgFileName.split('screenshots/')[1].split('.')[0])) for imgFileName in fileList]
 
     # Here is a mechanism to find out the presence of low level banners
-    # possibleBanner, supposedHeight = preprocessing(imgList)
+    possibleBanner, supposedHeight = preprocessing(imgList)
 
     templateCollection = {
         "tpl0": {

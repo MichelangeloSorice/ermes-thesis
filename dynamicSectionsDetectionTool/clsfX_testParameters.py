@@ -131,7 +131,12 @@ def main():
         }
 
     print(results)
-
+    with open(workdir + '/resultsSummary.json', 'w+') as resSummary:
+        json.dump(results["summary"], resSummary, indent=2)
+        resSummary.close()
+    with open(workdir + '/resultsFull.json', 'w+') as resFull:
+        json.dump(results["summary"], resFull, indent=2)
+        resFull.close()
 
 # +++++ Script Entrypoint
 main()

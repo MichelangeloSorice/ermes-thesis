@@ -1,5 +1,7 @@
 .idea
 dynamicSectionsDetectionTool/testIOFolder/*/output/*
+dynamicSectionsDetectionTool/classificationParamsTests/*/cfgFiles/*
+dynamicSectionsDetectionTool/classificationParamsTests/*/testResults.json
 dynamicSectionsDetectionTool/testIOFolder/*/input/screenshots/*
 dynamicSectionsDetectionTool/testIOFolder/*/input/captureAnalysis.json
 dynamicSectionsDetectionTool/randomTests
