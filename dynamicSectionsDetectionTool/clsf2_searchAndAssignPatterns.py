@@ -220,7 +220,7 @@ def searchBannerPattern(comparison, maxWidth=None, maxHeight=None):
     return False, 0
 
 
-def preprocessing(imgList):
+def preprocessing(imgList, blockHasChangedThreshold):
     listCopy = imgList.copy()
     votesDictionary = dict()
     comparisonsCount = 0
@@ -229,7 +229,7 @@ def preprocessing(imgList):
         print('PREPROC - There are ' + str(len(listCopy)) + ' screens remaining!')
         for img in listCopy:
             comparisonsCount += 1
-            comparison = performComparisons(testImg, img[0])
+            comparison = performComparisons(testImg, img[0], blockHasChangedThreshold)
             possibleBanner, possibleBannerHeight = searchBannerPattern(comparison)
             if possibleBanner:
                 if not (possibleBannerHeight in votesDictionary):
@@ -396,7 +396,9 @@ def main():
                 int(imgFileName.split('screenshots/')[1].split('.')[0])) for imgFileName in fileList]
 
     # Here is a mechanism to find out the presence of low level banners
-    possibleBanner, supposedHeight = preprocessing(imgList)
+    # Currently commented as too slow
+    # TODO implement multithread solution for preprocessing
+    # possibleBanner, supposedHeight = preprocessing(imgList, parameters["clusteringParameters"]["blockHasChangedThreshold"])
 
     templateCollection = {
         "tpl0": {

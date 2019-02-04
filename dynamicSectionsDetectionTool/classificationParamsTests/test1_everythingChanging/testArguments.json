@@ -1,0 +1,9 @@
+{
+  "clusteringParams":{
+    "blockHasChangedThreshold": [0.4, 0.51, 0.1],
+    "highLevel_minDistance": [0.1, 0.251, 0.05],
+    "highLevel_maxDistance": [0.8, 0.91, 0.1],
+    "core_minDistance": [0.1, 0.21, 0.05],
+    "core_maxDistance": [0.7, 0.81, 0.1]
+  }
+}

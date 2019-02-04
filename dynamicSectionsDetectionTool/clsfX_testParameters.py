@@ -10,16 +10,21 @@ import threading as th
 import subprocess
 import logging as log
 
-testDirectoriesArray = [
+testDirectoriesArray1 = [
     ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo'),
     ('./testIOFolder/TestSuite7_wildSole24/', 'sole24'),
-    # ('./testIOFolder/TestSuite9_wildCorriere/', 'corriere'),
-    # ('./testIOFolder/TestSuite11_wildAndroidWorld/', 'androidWorld'),
-    # ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
-    # ('./testIOFolder/TestSuite13_wildAranzulla/','aranzulla'),
-    # ('./testIOFolder/TestSuite14_wildVirginRadio/','virginRadio'),
-    # ('./testIOFolder/TestSuite15_wildGazzetta/','gazzetta'),
-    # ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano')
+    ('./testIOFolder/TestSuite8_wildRepubblica/', 'repubblica'),
+    ('./testIOFolder/TestSuite9_wildCorriere/', 'corriere'),
+    ('./testIOFolder/TestSuite11_wildAndroidWorld/', 'androidWorld'),
+    ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
+    ('./testIOFolder/TestSuite13_wildAranzulla/','aranzulla'),
+    ('./testIOFolder/TestSuite14_wildVirginRadio/','virginRadio'),
+    ('./testIOFolder/TestSuite15_wildGazzetta/','gazzetta'),
+    ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano')
+]
+
+testDirectoriesArray = [
+    ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo')
 ]
 
 
@@ -87,6 +92,8 @@ def main():
     mkdir(cfgFilesDir)
 
     print('There are ' + str(len(paramConfigObjects)) + ' configurations in this test suite!')
+    for configObj in paramConfigObjects:
+        print(configObj["clusteringParams"])
 
     cfgFilesArray = []
     for cfgIndex, configObj in enumerate(paramConfigObjects):
