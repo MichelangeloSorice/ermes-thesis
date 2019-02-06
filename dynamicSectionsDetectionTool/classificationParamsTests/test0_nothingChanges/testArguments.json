@@ -1,0 +1,32 @@
+{
+  "blockParams":{
+    "baseBlockHeight": 20,
+    "baseBlockWidth": 20,
+    "blocksPerRow": 96,
+    "blocksPerColumn": 54
+  },
+  "clusteringParams":{
+    "blockHasChangedThreshold": 0.4,
+    "highLevel_minDistance": 0.1,
+    "highLevel_maxDistance": 0.8,
+    "core_minDistance": 0.2,
+    "core_maxDistance": 0.7,
+    "core_window": {
+      "xStart": 26,
+      "xEnd": 66,
+      "yStart": 3,
+      "yEnd": 54
+    }
+  },
+  "patternParams":{
+    "consecutiveSubPatterns": 6,
+    "consecutiveStaticBlocks": 8,
+    "consecutiveDynamicBlocks": 4,
+    "searchWindow": {
+      "xStart": 26,
+      "xEnd": 70,
+      "yStart": 0,
+      "yEnd": 53
+    }
+  }
+}

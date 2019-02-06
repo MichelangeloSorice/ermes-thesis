@@ -182,7 +182,7 @@ def searchPatterns(blockComparisons, patternParams, maxWidth=None):
     return False
 
 
-def showClustersResults(templateCollection, dumpFile=None):
+def showClustersResults(templateCollection, dumpFile=None, elapsedTime=None):
     for tplName in templateCollection.keys():
         print('Template ' + tplName)
         print(sorted([imgTuple[1] for imgTuple in templateCollection[tplName]["images"]]))
@@ -192,7 +192,11 @@ def showClustersResults(templateCollection, dumpFile=None):
         for key, value in templateCollection.items():
             jsonObj[key] = sorted([tuple[1] for tuple in value["images"]])
         with open(dumpFile, 'w+') as f:
-            json.dump(jsonObj, f, indent=4)
+            res = {
+                "tplCollection": jsonObj,
+                "elapsedTime": elapsedTime
+            }
+            json.dump(res, f, indent=4)
             f.close()
 
 
@@ -357,12 +361,14 @@ def main():
     # folder with a screenshots subdirectory
     workdir = sys.argv[1]
 
-    paramsFile = './parametersFiles/default_clsfParams.json'
     try:
         paramsFile = sys.argv[2]
         print('+++++ Using custom params file ' + sys.argv[2])
+        cfgName = paramsFile.split('/')[-1].split('.json')[0]
     except:
         print('+++++ Using default parameters')
+        paramsFile = './parametersFiles/default_clsfParams.json'
+        cfgName = 'default'
     with open(paramsFile, 'r') as ParamsFile:
         parameters = json.load(ParamsFile)
         ParamsFile.close()
@@ -394,6 +400,11 @@ def main():
     # Getting a splitted version of all images
     imgList = [(splitImage(cv2.imread(imgFileName, cv2.IMREAD_UNCHANGED), blockHeightPx, blockWidthPx),
                 int(imgFileName.split('screenshots/')[1].split('.')[0])) for imgFileName in fileList]
+
+    # use this if you need to get visualResult of comparisons on the fly
+    #comparison = performComparisons(baseImgTuple[0], imgList[0][0], 0.4)
+    #res = computeVisualResult(comparison)
+    #cv2.imwrite(join(workdir, 'visualResult.jpg'), res)
 
     # Here is a mechanism to find out the presence of low level banners
     # Currently commented as too slow
@@ -460,9 +471,9 @@ def main():
         for name in sortedList:
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
 
-    showClustersResults(templateCollection, workdir + '/output/clsf2_tplSummary.json')
     end = time.time()
-    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(end - start))
+    showClustersResults(templateCollection, workdir + '/output/clsf2_'+cfgName+'_tplSummary.json', round(end - start,3))
+    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start,3)))
 
 
 # +++++ Script Entrypoint

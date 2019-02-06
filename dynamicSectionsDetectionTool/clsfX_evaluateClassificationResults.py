@@ -76,7 +76,7 @@ def compareSummaries(base, tested):
     for baseTplName, baseTpl in base.items():
         totalImgs += len(baseTpl)
         bestScore = (0, None, None)
-        for testTplName, testTpl in tested.items():
+        for testTplName, testTpl in tested["tplCollection"].items():
             tplScore = sum(1 for elem in baseTpl if elem in testTpl)
             if bestScore[0] < tplScore:
                 bestScore = (tplScore, testTpl, testTplName)
@@ -84,19 +84,24 @@ def compareSummaries(base, tested):
         correctlyClassifiedImgs += bestScore[0]
         if bestScore[0] == len(baseTpl):
             correctlyClassifiedTpl += 1
+        if bestScore[1] is None:
+            matcher = 'No matcher found'
+        else:
+            matcher = bestScore[1]
 
         result[baseTplName] = {
             'optimalTpl': baseTpl,
-            'bestMatcher': bestScore[1],
+            'bestMatcher': matcher,
             'matchScore': round(bestScore[0] / len(baseTpl), 3)
         }
         # Deleting the entry associated to the best matcher
         if not bestScore[2] is None:
-            del tested[bestScore[2]]
+            del tested["tplCollection"][bestScore[2]]
 
     result['overallComparison'] = {
         'correctlyClassifiedImgs': round(correctlyClassifiedImgs / totalImgs, 3),
-        'correctlyClassifiedTpls': round(correctlyClassifiedTpl / len(base.keys()), 3)
+        'correctlyClassifiedTpls': round(correctlyClassifiedTpl / len(base.keys()), 3),
+        'elapsedTime': tested["elapsedTime"]
     }
 
     return result

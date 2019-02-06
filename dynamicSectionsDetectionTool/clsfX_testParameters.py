@@ -10,7 +10,7 @@ import threading as th
 import subprocess
 import logging as log
 
-testDirectoriesArray1 = [
+testDirectoriesArray = [
     ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo'),
     ('./testIOFolder/TestSuite7_wildSole24/', 'sole24'),
     ('./testIOFolder/TestSuite8_wildRepubblica/', 'repubblica'),
@@ -23,7 +23,7 @@ testDirectoriesArray1 = [
     ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano')
 ]
 
-testDirectoriesArray = [
+testDirectoriesArray1 = [
     ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo')
 ]
 
@@ -39,21 +39,23 @@ class ClassificationThread(th.Thread):
     def run(self):
         for cfgFile in self.cfgFilesArray:
             cfgName = cfgFile.split('/')[-1].split('.json')[0]
-            log.info(' Started classification run with ' + cfgName)
-            classifierProc = subprocess.Popen(['python3', 'clsf2_searchAndAssignPatterns.py', self.workdir, cfgFile],
+            log.info(' Started classification task with ' + cfgName)
+            classifierProc = subprocess.Popen(['python3', 'clsf2_searchTplsAndClassifyScreens.py', self.workdir, cfgFile],
                                               stdout=subprocess.DEVNULL)
             classifierProc.wait()
-            log.info(' Completed classification with ' + cfgName)
+            log.info(' Completed classification task with ' + cfgName)
 
             evaluationProc = subprocess.Popen(
                 ['python3', 'clsfX_evaluateClassificationResults.py', self.workdir, 'optimal'],
                 stdout=subprocess.PIPE)
-            log.info(' Completed evaluation of ' + cfgName)
+            log.info(' Completed results evaluation for ' + cfgName)
             res = evaluationProc.stdout.read().decode('utf-8')
+            log.info(res)
             # Substituting single quotes with double ones
             res = res.replace("\'", "\"")
             evaluation = json.loads(res)
             self.results.append((cfgName, evaluation["clsf2"]["overallComparison"]))
+            log.info(' Completed execution!')
 
 
 def main():
@@ -65,6 +67,7 @@ def main():
         testArgFile.close()
     with open('./parametersFiles/default_clsfParams.json', 'r') as defaultParamsFile:
         defaultParams = json.load(defaultParamsFile)
+        defaultParamsFile.close()
 
     paramConfigObjects = None
     for paramSetKey, paramSetValue in testData.items():
@@ -91,37 +94,44 @@ def main():
         rmtree(cfgFilesDir)
     mkdir(cfgFilesDir)
 
-    print('There are ' + str(len(paramConfigObjects)) + ' configurations in this test suite!')
-    for configObj in paramConfigObjects:
-        print(configObj["clusteringParams"])
+    if paramConfigObjects is None:
+        print('Evaluating performances for default configuration!')
+        paramConfigObjects = [copy.deepcopy(defaultParams)]
+    else:
+        print('There are ' + str(len(paramConfigObjects)) + ' configurations in this test suite!')
+    #for configObj in paramConfigObjects:
+        #print(configObj["clusteringParams"])
 
     cfgFilesArray = []
     for cfgIndex, configObj in enumerate(paramConfigObjects):
         cfgFileName = cfgFilesDir + 'cfg' + str(cfgIndex) + '.json'
         cfgFilesArray.append(cfgFileName)
-        print('Producing configFile ' + cfgFileName)
         with open(cfgFileName, 'w+') as cfgFile:
             json.dump(configObj, cfgFile, indent=None)
             cfgFile.close()
 
-    thArray = []
     log.basicConfig(level=log.INFO, format='+++ %(threadName)s +++ %(message)s')
-    for workdir in testDirectoriesArray:
-        classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1])
-        log.info(' Starting thread ' + workdir[1])
-        classificationTh.start()
-        thArray.append(classificationTh)
+    thArray = []
+    for i in range(0, len(testDirectoriesArray), 4):
+        currentTh = []
+        currentTesting = testDirectoriesArray[i: min(i+4, len(testDirectoriesArray))]
+        for workdir in currentTesting:
+            classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1])
+            log.info(' Starting thread ' + workdir[1])
+            classificationTh.start()
+            thArray.append(classificationTh)
+            currentTh.append(classificationTh)
+        for current_th in currentTh:
+            current_th.join()
 
     results = {
         "summary": {}
     }
     for classificationTh in thArray:
-        classificationTh.join()
         for resTuple in classificationTh.results:
             if not resTuple[0] in results:
                 results[resTuple[0]] = {}
             results[resTuple[0]][classificationTh.name] = resTuple[1]
-        log.info(' Completed execution of a thread!')
 
     print(results)
 
@@ -132,17 +142,20 @@ def main():
             sum(res["correctlyClassifiedImgs"] for res in cfgRes.values()) / len(cfgRes.keys()), 3)
         avgCorrectlyClassifiedTpls = round(
             sum(res["correctlyClassifiedTpls"] for res in cfgRes.values()) / len(cfgRes.keys()), 3)
+        avgelapsedTime = round(
+            sum(res["elapsedTime"] for res in cfgRes.values()) / len(cfgRes.keys()), 3)
         results["summary"][cfg] = {
             "avgCorrectlyClassifiedImgs": avgCorrectlyClassifiedImg,
-            "avgCorrectlyClassifiedTpls": avgCorrectlyClassifiedTpls
+            "avgCorrectlyClassifiedTpls": avgCorrectlyClassifiedTpls,
+            "avgElapsedTime": avgelapsedTime
         }
 
     print(results)
-    with open(workdir + '/resultsSummary.json', 'w+') as resSummary:
+    with open(testDataDir + '/resultsSummary.json', 'w+') as resSummary:
         json.dump(results["summary"], resSummary, indent=2)
         resSummary.close()
-    with open(workdir + '/resultsFull.json', 'w+') as resFull:
-        json.dump(results["summary"], resFull, indent=2)
+    with open(testDataDir + '/resultsFull.json', 'w+') as resFull:
+        json.dump(results, resFull, indent=2)
         resFull.close()
 
 # +++++ Script Entrypoint
