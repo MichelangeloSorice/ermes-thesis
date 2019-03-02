@@ -92,7 +92,7 @@ def main():
     with open(workdir + '/output/finalDecision.json', 'w+') as resultFile:
         finalResult = {
             'thresholds': thresholds,
-            'perBlockPde': perBlockPde,
+            'perBlockPde': round(perBlockPde, 5),
             'isBlockDynamic': isBlockDynamic
         }
         json.dump(finalResult, resultFile, indent=None)

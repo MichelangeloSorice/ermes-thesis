@@ -115,6 +115,7 @@ def performComparisons(imgArrayA, imgArrayB, blockHasChangedThreshold):
 
     # The threshold is the number of pixels per block * the percentage of the block that must change to
     # consider the whole block as changed
+    # TODO check what happens with 3channels
     threshold = (blockHeightPx * blockWidthPx) * blockHasChangedThreshold
     hasBlockChanged = []
 
@@ -269,24 +270,26 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
 
     while len(imgList) >= 1:
         print('STEP 0 - There are ' + str(len(imgList)) + ' screens to be tested for this iteration')
-        testImgTuple = imgList.pop()
-        testImg, testImgName = testImgTuple[0], testImgTuple[1]
+        testImgTriple = imgList.pop()
+        testImg, testImgName, imgData = testImgTriple[0], testImgTriple[1], testImgTriple[2]
         tplFound = False
 
         if test:
             showImageAndLock('testImg', testImg)
 
-        # Counts down how many tpls have been judged to be unmatchable with the tested img to decide wether
-        # it is convinient or not to assign it to a new template
-        unmatchableTplCount = 0
-
         # We test our image against all newly added elements of each template attempting to assign it
         for tplKey, tplValue in templateCollection.items():
+            imgTplData = imgData[tplKey]
+
             # If the tpl has not changed from last iteration there is no need to evalute it
             if not tplValue["flagChanged"]:
                 continue
 
-            tplConfidencePoints = 0
+            if imgTplData["incompatible"]:
+                continue
+
+            tplConfidencePoints = imgTplData["tplPatternConfidence"]
+
             for imgIndex in range(tplValue["lastAddedIndex"], len(tplValue["images"])):
                 img = tplValue["images"][imgIndex][0]
                 blockComparisonsResults = performComparisons(img, testImg, blockHasChangedThreshold)
@@ -304,7 +307,7 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                     break
                 if distance > highLvl_maxDistance:
                     # Images are too different to belong to same template
-                    unmatchableTplCount += 1
+                    imgTplData["incompatible"] = True
                     break
 
                 # core_window contains window horizontal and vertical start and end
@@ -322,7 +325,7 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                     break
                 if distanceForReducedWindow > core_maxDistance:
                     # Images are too different to belong to same template
-                    unmatchableTplCount += 1
+                    imgTplData["incompatible"] = True
                     break
 
                 tplPatternFound = searchPatterns(blockComparisonsResults, patternParams)
@@ -336,22 +339,28 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
 
             if tplFound:
                 print('+++ Assigning screen: ' + str(testImgName) + ' to ' + str(tplKey))
-                tplValue["images"].append(testImgTuple)
+                tplValue["images"].append((testImgTriple[0], testImgTriple[1]))
                 tplValue["flagChanged"] = True
                 break
 
         if not tplFound:
+            unmatchableTplCount = sum(1 for tpl in imgData.keys() if imgData[tpl]["incompatible"])
             if unmatchableTplCount == len(templateCollection.keys()):
                 # If we found the image to be unmatchable with all currently known templates we create a new tpl for it
                 print('STEP 0 - Unmatchable screen found, creating new template!')
                 lastTplIndex += 1
                 templateCollection["tpl" + str(lastTplIndex)] = {
-                    "images": [testImgTuple],
+                    "images": [(testImgTriple[0],testImgTriple[1])],
                     "flagChanged": False,
                     "previousIterationLength": 0
                 }
+                for imgTriple in imgList:
+                    imgTriple[2]["tpl" + str(lastTplIndex)] = {
+                        "incompatible": False,
+                        "tplPatternConfidence": 0,
+                    }
             else:
-                nextIterationImgList.append(testImgTuple)
+                nextIterationImgList.append(testImgTriple)
 
     return nextIterationImgList, lastTplIndex
 
@@ -395,11 +404,12 @@ def main():
     baseImgTest = cv2.imread(baseImgName, cv2.IMREAD_UNCHANGED)
     # Each img is stored as a tuple (splittedImg, imgName)
     baseImgTuple = (splitImage(baseImgTest, blockHeightPx, blockWidthPx),
-                    int(baseImgName.split('screenshots/')[1].split('.')[0]))
+                    int(baseImgName.split('screenshots/')[1].split('.')[0])) # array of incompatible tpls
 
-    # Getting a splitted version of all images
+    # Getting a splitted version of all images, their name, and creating an object to store templates data
     imgList = [(splitImage(cv2.imread(imgFileName, cv2.IMREAD_UNCHANGED), blockHeightPx, blockWidthPx),
-                int(imgFileName.split('screenshots/')[1].split('.')[0])) for imgFileName in fileList]
+                int(imgFileName.split('screenshots/')[1].split('.')[0]),
+                {}) for imgFileName in fileList]
 
     # use this if you need to get visualResult of comparisons on the fly
     #comparison = performComparisons(baseImgTuple[0], imgList[0][0], 0.4)
@@ -435,6 +445,15 @@ def main():
             else:
                 tplValue["flagChanged"] = False
 
+        # Each unassigned image keeps some intermediate information about templates
+        for tplKey in templateCollection.keys():
+            for imgTriple in imgList:
+                if not tplKey in imgTriple[2]:
+                    imgTriple[2][tplKey] = {
+                        "incompatible": False,
+                        "tplPatternConfidence": 0,
+                    }
+
         # Show current classification
         showClustersResults(templateCollection)
 
@@ -452,7 +471,7 @@ def main():
             randomImgTuple = imgList.pop()
             lastTplIndex += 1
             templateCollection["tpl" + str(lastTplIndex)] = {
-                "images": [randomImgTuple],
+                "images": [(randomImgTuple[0], randomImgTuple[1])], # trimming template infos
                 "flagChanged": False,
                 "previousIterationLength": 0,
                 "lastAddedIndex": 0
