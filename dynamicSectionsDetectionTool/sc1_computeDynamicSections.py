@@ -15,15 +15,17 @@ def countNN0OverThreshold(countNonZero, threshold):
     return 0
 
 
-def computeFinalDecision(captureAnalysisData, thresholds):
+def computeFinalDecision(captureAnalysisData, thresholds, blockData):
     NN0, PDE, perBlockNN0Counts = thresholds['NN0'], thresholds['PDE'], captureAnalysisData['perBlockNN0Counts']
+    blockHeight, blockWidth, nChannels = blockData.values()
     evaluateBlockNn0Counts = np.vectorize(countNN0OverThreshold, otypes=[np.int])
 
     isBlockDynamic = []
     perBlockPde = []
+    threshold = (blockHeight*blockWidth*nChannels)*NN0
     for blockCounts in perBlockNN0Counts:
         # We get an array containing a 0 for each static evaluation and a 1 for each dynamic one
-        blockEvaluations = evaluateBlockNn0Counts(blockCounts, NN0)
+        blockEvaluations = evaluateBlockNn0Counts(blockCounts, threshold)
         # Counting down amount of dynamic evaluations
         dynamicEvaluations = np.count_nonzero(blockEvaluations)
         # Computing block PDE
@@ -88,7 +90,7 @@ def main():
 
     thresholds = sectionDetectionParams['THRESHOLDS']
 
-    isBlockDynamic, perBlockPde = computeFinalDecision(captureAnalysisData, thresholds)
+    isBlockDynamic, perBlockPde = computeFinalDecision(captureAnalysisData, thresholds, sectionDetectionParams['BLOCK'])
     with open(workdir + '/output/finalDecision.json', 'w+') as resultFile:
         finalResult = {
             'thresholds': thresholds,

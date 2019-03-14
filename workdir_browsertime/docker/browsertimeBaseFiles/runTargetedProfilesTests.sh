@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 ## Assuming that under tmp we have 5 folders with targeted user data directories
 ## Parameters <url> <perProfileVisits> <usrDataDir>
+url=$1
+perProfileVisits=$2
+profileDirectory=$3
 profileName=`echo ${3} | cut -d'/' -f3`
 domain=`echo ${1} | cut -d'/' -f3 | cut -d'.' -f2`
 
@@ -15,7 +18,7 @@ browsertimeOptions=(
 ## Turn this to true to indent json/har files
 '--prettyPrint=false'
 ## Important allows multiple systems to interact with the same cookies as they are stored in plaintext
-'--chrome.args=--passoword-store=basic'
+'--chrome.args=--password-store=basic'
 )
 
 echo "Running instance for profile ${3} on ${domain}"

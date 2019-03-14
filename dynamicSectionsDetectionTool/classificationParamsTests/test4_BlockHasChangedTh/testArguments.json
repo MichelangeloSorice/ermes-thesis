@@ -1,0 +1,5 @@
+{
+  "clusteringParams":{
+    "blockHasChangedThreshold": [0.1, 0.81, 0.02]
+  }
+}

@@ -20,6 +20,8 @@ blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = 0, 0, 0, 0,
 def setBlockGlobalVariables(paramsList):
     global blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn
     blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = paramsList.values()
+    print('BlockWidthPx: '+str(blockWidthPx) +' - BlockHeightPx: '+str(blockHeightPx))
+    print('BlocksPerRow: '+str(blocksPerRow) +' - BlockPerColumn: '+str(blocksPerColumn))
 
 
 def showImageAndLock(name, img, numRow=None, numCol=None):
@@ -30,6 +32,18 @@ def showImageAndLock(name, img, numRow=None, numCol=None):
     cv2.imshow(name, restoreImage(img, numRow, numCol))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
+def saveImageAndLock(name, img, dest, numRow=None, numCol=None):
+    if numRow is None:
+        numRow = blocksPerColumn
+    if numCol is None:
+        numCol = blocksPerRow
+    cv2.imshow(name, restoreImage(img, numRow, numCol))
+    cv2.imwrite(join(dest, name), restoreImage(img, numRow, numCol))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 
 
 # Splits an image into an array of sub-images with shape blockHeight x blockWidth
@@ -89,6 +103,29 @@ def computeVisualResult(isBlockDynamic, numRow=None, numCol=None):
     cv2.waitKey(0)
     return res
 
+def saveVisualResult(isBlockDynamic, dest, numRow=None, numCol=None):
+    # Generating black and white blocks with correct shape
+    blackBlock = np.zeros((blockHeightPx, blockWidthPx, 3), dtype=np.uint8)
+    whiteBlock = np.ones((blockHeightPx, blockWidthPx, 3), dtype=np.uint8)
+    whiteBlock[:, :, :] = 255
+
+    if numRow is None:
+        numRow = blocksPerColumn
+    if numCol is None:
+        numCol = blocksPerRow
+
+    visualResultBlocksArray = []
+    for decision in isBlockDynamic:
+        if decision is True:
+            visualResultBlocksArray.append(blackBlock)
+        else:
+            visualResultBlocksArray.append(whiteBlock)
+
+    res = restoreImage(visualResultBlocksArray, numRow, numCol)
+    cv2.imwrite(dest, res)
+    cv2.waitKey(0)
+    return res
+
 
 def getReducedWindow(comparisonsArray, width, height, maxWidth=None):
     reducedWindow = []
@@ -116,7 +153,7 @@ def performComparisons(imgArrayA, imgArrayB, blockHasChangedThreshold):
     # The threshold is the number of pixels per block * the percentage of the block that must change to
     # consider the whole block as changed
     # TODO check what happens with 3channels
-    threshold = (blockHeightPx * blockWidthPx) * blockHasChangedThreshold
+    threshold = (blockHeightPx * blockWidthPx) * blockHasChangedThreshold * 3
     hasBlockChanged = []
 
     for index, blockFromA in enumerate(imgArrayA):
@@ -225,7 +262,7 @@ def searchBannerPattern(comparison, maxWidth=None, maxHeight=None):
     return False, 0
 
 
-def preprocessing(imgList, blockHasChangedThreshold):
+def preprocessing(imgList, blockHasChangedThreshold, test=True):
     listCopy = imgList.copy()
     votesDictionary = dict()
     comparisonsCount = 0
@@ -237,6 +274,11 @@ def preprocessing(imgList, blockHasChangedThreshold):
             comparison = performComparisons(testImg, img[0], blockHasChangedThreshold)
             possibleBanner, possibleBannerHeight = searchBannerPattern(comparison)
             if possibleBanner:
+                if test:
+                    saveImageAndLock('img.jpg', img[0], '.')
+                    saveImageAndLock('testImg.jpg', testImg, '.')
+                    saveVisualResult(comparison,'./fullComp.jpg')
+
                 if not (possibleBannerHeight in votesDictionary):
                     votesDictionary[possibleBannerHeight] = 1
                 else:
@@ -274,9 +316,6 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
         testImg, testImgName, imgData = testImgTriple[0], testImgTriple[1], testImgTriple[2]
         tplFound = False
 
-        if test:
-            showImageAndLock('testImg', testImg)
-
         # We test our image against all newly added elements of each template attempting to assign it
         for tplKey, tplValue in templateCollection.items():
             imgTplData = imgData[tplKey]
@@ -294,10 +333,6 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                 img = tplValue["images"][imgIndex][0]
                 blockComparisonsResults = performComparisons(img, testImg, blockHasChangedThreshold)
 
-                if test:
-                    showImageAndLock('img', img)
-                    computeVisualResult(blockComparisonsResults)
-
                 distance = round(np.count_nonzero(blockComparisonsResults) / len(blockComparisonsResults), 3)
 
                 if distance < highLvl_minDistance:
@@ -313,9 +348,6 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                 # core_window contains window horizontal and vertical start and end
                 xStart, xEnd, yStart, yEnd = core_window.values()
                 comparisonReduced = getReducedWindow(blockComparisonsResults, [xStart, xEnd], [yStart, yEnd])
-
-                if test:
-                    computeVisualResult(comparisonReduced, yEnd - yStart, xEnd - xStart)
 
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
                 if distanceForReducedWindow < core_minDistance:
@@ -334,7 +366,6 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                     if tplConfidencePoints / len(tplValue["images"]) >= 0.5 or tplConfidencePoints > 6:
                         tplFound = True
                         print('STEP 3 - Tpl found for pattern with ' + str(tplValue["images"][imgIndex][1]))
-                        print(tplConfidencePoints)
                         break
 
             if tplFound:
@@ -419,7 +450,7 @@ def main():
     # Here is a mechanism to find out the presence of low level banners
     # Currently commented as too slow
     # TODO implement multithread solution for preprocessing
-    # possibleBanner, supposedHeight = preprocessing(imgList, parameters["clusteringParameters"]["blockHasChangedThreshold"])
+    #possibleBanner, supposedHeight = preprocessing(imgList,  parameters["clusteringParams"]["blockHasChangedThreshold"])
 
     templateCollection = {
         "tpl0": {
@@ -491,7 +522,7 @@ def main():
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
 
     end = time.time()
-    showClustersResults(templateCollection, workdir + '/output/clsf2_'+cfgName+'_tplSummary.json', round(end - start,3))
+    showClustersResults(templateCollection, workdir + '/output/'+cfgName+'_tplSummary.json', round(end - start,3))
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start,3)))
 
 

@@ -123,16 +123,16 @@ def main():
         clsfResFolder = workdir + '/output/'
         perAlgtorithmResult = {}
         for fileName in listdir(clsfResFolder):
-            if fileName.startswith('clsf') and fileName.endswith('tplSummary.json'):
+            if fileName.startswith('cfg') and fileName.endswith('tplSummary.json'):
                 with open(join(clsfResFolder, fileName), 'r') as resFile:
-                    algName = fileName.split('_')[0]
-                    perAlgtorithmResult[algName] = json.load(resFile)
+                    cfgName = fileName.split('_')[0]
+                    perAlgtorithmResult[cfgName] = json.load(resFile)
                     resFile.close()
 
         evaluationResults = {}
         with open(workdir + '/output/clsf_algorithmEvaluation.json', 'w+') as evaluationResultsFile:
-            for algName, res in perAlgtorithmResult.items():
-                evaluationResults[algName] = compareSummaries(optimalClusters, res)
+            for cfgName, res in perAlgtorithmResult.items():
+                evaluationResults[cfgName] = compareSummaries(optimalClusters, res)
                 print(evaluationResults)
             json.dump(evaluationResults, evaluationResultsFile, indent=2)
 
