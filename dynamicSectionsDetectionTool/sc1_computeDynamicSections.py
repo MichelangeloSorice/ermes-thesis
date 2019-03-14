@@ -3,10 +3,24 @@
 
 import json
 import sys
-from os.path import join
+import time
+from os import  mkdir
+from os.path import join, exists
+from shutil import  rmtree
 
 import cv2
 import numpy as np
+
+
+# Global Variables
+blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn, nChannels = 0, 0, 0, 0, 3
+
+
+def setBlockGlobalVariables(paramsList):
+    global blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn
+    blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = paramsList.values()
+    print('BlockWidthPx: ' + str(blockWidthPx) + ' - BlockHeightPx: ' + str(blockHeightPx))
+    print('BlocksPerRow: ' + str(blocksPerRow) + ' - BlockPerColumn: ' + str(blocksPerColumn))
 
 
 def countNN0OverThreshold(countNonZero, threshold):
@@ -15,51 +29,55 @@ def countNN0OverThreshold(countNonZero, threshold):
     return 0
 
 
-def computeFinalDecision(captureAnalysisData, thresholds, blockData):
-    NN0, PDE, perBlockNN0Counts = thresholds['NN0'], thresholds['PDE'], captureAnalysisData['perBlockNN0Counts']
-    blockHeight, blockWidth, nChannels = blockData.values()
-    evaluateBlockNn0Counts = np.vectorize(countNN0OverThreshold, otypes=[np.int])
+def evalPde(pde, threshold):
+    if pde > threshold:
+        return True
+    return False
 
-    isBlockDynamic = []
-    perBlockPde = []
-    threshold = (blockHeight*blockWidth*nChannels)*NN0
-    for blockCounts in perBlockNN0Counts:
+
+def computePerBlockDynamicEvaluations(captureData, thresholds, comparisonsCount):
+    NN0, PDE = thresholds.values()
+    evaluateBlockNn0Counts = np.vectorize(countNN0OverThreshold, otypes=[np.uint16])
+    evaluateDynamicBlocks = np.vectorize(evalPde, otypes=[np.bool])
+
+    # Array keeping the count for each blocks of how many times it has been evaluated dynamic
+    perBlockTotalDynamicEvals = np.zeros((1, blocksPerColumn*blocksPerRow))
+    # Computing nn0 as integer according to block dimensions
+    nn0Threshold = (blockHeightPx*blockWidthPx*nChannels)*NN0
+    # Splitting the raw analysis data into arrays corresponding to the NN= values of each comparison
+    comparisonsResults = np.split(captureData, comparisonsCount)
+
+    for comparison in comparisonsResults:
         # We get an array containing a 0 for each static evaluation and a 1 for each dynamic one
-        blockEvaluations = evaluateBlockNn0Counts(blockCounts, threshold)
-        # Counting down amount of dynamic evaluations
-        dynamicEvaluations = np.count_nonzero(blockEvaluations)
-        # Computing block PDE
-        blockPde = float(dynamicEvaluations / len(blockEvaluations))
-        perBlockPde.append(blockPde)
-        if blockPde > PDE:
-            isBlockDynamic.append(True)
-        else:
-            isBlockDynamic.append(False)
+        blockEvaluations = evaluateBlockNn0Counts(comparison, nn0Threshold)
+        np.add(perBlockTotalDynamicEvals, blockEvaluations, out=perBlockTotalDynamicEvals)
 
-    return isBlockDynamic, perBlockPde
+    # Getting the percentage of dynamic evaluations for each block
+    perBlockPde = np.true_divide(perBlockTotalDynamicEvals, comparisonsCount)
+    # Get an array of boolean with each dynamic block set to true
+    isBlockDynamic = evaluateDynamicBlocks(perBlockPde, PDE)
+
+    return isBlockDynamic
 
 
-def computeVisualResult(isBlockDynamic, captureAnalysisData, outputFolder):
+def computeVisualResult(isBlockDynamic,  filePath):
     # Generating black and white blocks with correct shape
-    blockHeight, blockWidth = captureAnalysisData['blockDimensions']
-    numRow, numCol = captureAnalysisData['gridParams']
-    blackBlock = np.zeros((blockHeight, blockWidth, 3), dtype=np.uint8)
-    whiteBlock = np.ones((blockHeight, blockWidth, 3), dtype=np.uint8)
+    blackBlock = np.zeros((blockHeightPx, blockWidthPx, nChannels), dtype=np.uint8)
+    whiteBlock = np.ones((blockHeightPx, blockWidthPx, nChannels), dtype=np.uint8)
     whiteBlock[:, :, :] = 255
 
-    visualResultBlocksArray = [];
+    visualResultBlocksArray = []
     for decision in isBlockDynamic:
         if decision is True:
             visualResultBlocksArray.append(blackBlock)
         else:
             visualResultBlocksArray.append(whiteBlock)
 
-    res = restoreImage(visualResultBlocksArray, numRow, numCol)
-    cv2.imwrite(join(outputFolder, 'visualResult.jpg'), res)
+    res = restoreImage(visualResultBlocksArray, blocksPerColumn, blocksPerRow)
+    cv2.imwrite(filePath, res)
     return res
 
 
-# Code for recreating the image for test sake
 def restoreImage(blocksArray, numRow, numCol):
     restoredImg = []
 
@@ -77,32 +95,66 @@ def restoreImage(blocksArray, numRow, numCol):
 
 
 def main():
-    # The only input is the working directory which must contain an input subfolder and  a captureAnalysis file
+    # Input: <workdir> <configFilePath>
     # as produced by script sc0
     workdir = sys.argv[1]
 
-    with open('./sectionDetectionParams.json') as inputFile:
-        sectionDetectionParams = json.load(inputFile)
-        inputFile.close()
-    with open(workdir + '/input/captureAnalysis.json', 'r+') as captureAnalysisDataFile:
-        captureAnalysisData = json.load(captureAnalysisDataFile)
-        captureAnalysisDataFile.close()
+    try:
+        # Optional configuration overriding default one
+        paramsFile = sys.argv[2]
+        print('+++++ Using custom configuration ' + sys.argv[2])
+        cfgName = paramsFile.split('/')[-1].split('.json')[0]
+    except:
+        print('+++++ Using default configuration')
+        paramsFile = './parametersFiles/default_sectionDetectionParams.json'
+        cfgName = 'default'
+    with open(paramsFile, 'r') as ParamsFile:
+        sectionDetectionParams = json.load(ParamsFile)
+        ParamsFile.close()
 
-    thresholds = sectionDetectionParams['THRESHOLDS']
+    blockConfigName = sectionDetectionParams['blockConfig']
+    analysisDataDir = join(workdir, 'input', 'captureAnalysis', blockConfigName)
 
-    isBlockDynamic, perBlockPde = computeFinalDecision(captureAnalysisData, thresholds, sectionDetectionParams['BLOCK'])
-    with open(workdir + '/output/finalDecision.json', 'w+') as resultFile:
+    with open(join(analysisDataDir,'analysisData.json'), 'r+') as captureAnalysisInfoFile:
+        captureAnalysisMetaInfo = json.load(captureAnalysisInfoFile)
+        captureAnalysisInfoFile.close()
+
+    start = time.time()
+    print('++++ Starting execution at ' + str(start))
+
+    # Retrieving block params of the adopted block configuration
+    setBlockGlobalVariables(captureAnalysisMetaInfo['blockParams'])
+
+    captureData = np.load(join(analysisDataDir, 'resData.npy'))
+    isBlockDynamic = computePerBlockDynamicEvaluations(captureData, sectionDetectionParams['THRESHOLDS'], captureAnalysisMetaInfo['comparisonsCount'])
+
+    end = time.time()
+    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start, 3)))
+
+    # Setting up the directory keeping the results of this specific analysis
+    resultsDir = join(workdir, 'output', 'results')
+    if not exists(resultsDir):
+        mkdir(resultsDir)
+    print(resultsDir)
+    resultSpecificDir = join(resultsDir, cfgName)
+    if exists(resultSpecificDir):
+        rmtree(resultSpecificDir)
+    print(resultSpecificDir)
+    mkdir(resultSpecificDir)
+
+    with open(join(resultSpecificDir, cfgName+'_info.json'), 'w+') as resultFile:
         finalResult = {
-            'thresholds': thresholds,
-            'perBlockPde': round(perBlockPde, 5),
-            'isBlockDynamic': isBlockDynamic
+            'blockConfig': blockConfigName,
+            'thConfig': cfgName,
+            'execTimeCaptureAnalysis': captureAnalysisMetaInfo['executionTime'],
+            'execTimeDecision': round(end - start, 3),
         }
-        json.dump(finalResult, resultFile, indent=None)
+        json.dump(finalResult, resultFile, indent=2)
         resultFile.close()
 
+    np.save(join(resultSpecificDir, cfgName+'_changesMap'), isBlockDynamic)
     # Compute and store a visual representation of the result showing dynamic area as Black blocks on a blank img
-    visualResultsOutputFolder = workdir + '/output/'
-    res = computeVisualResult(isBlockDynamic, captureAnalysisData, visualResultsOutputFolder)
+    res = computeVisualResult((isBlockDynamic.tolist())[0],  join(resultSpecificDir, cfgName+'_visualResult.png'))
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', res)

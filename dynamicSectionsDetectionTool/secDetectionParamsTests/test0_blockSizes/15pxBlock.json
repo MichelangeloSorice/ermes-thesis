@@ -1,0 +1,8 @@
+{
+  "blockParams":{
+    "baseBlockHeight": 15,
+    "baseBlockWidth": 15,
+    "blocksPerRow": 128,
+    "blocksPerColumn": 72
+  }
+}

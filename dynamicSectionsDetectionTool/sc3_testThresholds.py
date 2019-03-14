@@ -21,7 +21,14 @@ def pdeOverThreshold(pde, threshold):
 
 
 def main():
-    workdir = sys.argv[1]
+    # The working directory which must contain a testArguments.json
+    testDataDir = sys.argv[1]
+    # Command to disable automatic generation of files
+    provided = False
+    if len(sys.argv) > 2:
+        if sys.argv[2] == 'provided':
+            provided = True
+
     testConfig = int(sys.argv[2])
 
     with open('./sectionDetectionParams.json') as inputFile:

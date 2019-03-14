@@ -128,9 +128,9 @@ def main():
 
     log.basicConfig(level=log.INFO, format='+++ %(threadName)s +++ %(message)s')
     thArray = []
-    for i in range(0, len(testDirectoriesArray), 3):
+    for i in range(0, len(testDirectoriesArray), 4):
         currentTh = []
-        currentTesting = testDirectoriesArray[i: min(i+3, len(testDirectoriesArray))]
+        currentTesting = testDirectoriesArray[i: min(i+4, len(testDirectoriesArray))]
         for workdir in currentTesting:
             classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1])
             log.info(' Starting thread ' + workdir[1])
