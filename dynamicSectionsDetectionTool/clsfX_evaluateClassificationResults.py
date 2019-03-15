@@ -6,6 +6,7 @@ import json
 import sys
 from os import listdir
 from os.path import join
+from shutil import copy, rmtree
 
 import cv2
 import numpy as np
@@ -120,7 +121,7 @@ def main():
             optimalClusters = json.load(f)
             f.close()
 
-        clsfResFolder = workdir + '/output/'
+        clsfResFolder = workdir + '/output/layoutDetectionRes/'
         perAlgtorithmResult = {}
         for fileName in listdir(clsfResFolder):
             if fileName.startswith('cfg') and fileName.endswith('tplSummary.json'):
@@ -136,6 +137,8 @@ def main():
                 print(evaluationResults)
             json.dump(evaluationResults, evaluationResultsFile, indent=2)
 
+        # Cleanup
+        rmtree
 
 
 

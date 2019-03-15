@@ -1,0 +1,7 @@
+{
+  "xVar": "blockParams.baseBlockHeight",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "Block size in px",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

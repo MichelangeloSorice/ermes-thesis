@@ -15,6 +15,7 @@ from random import shuffle
 
 # Global Variables
 blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = 0, 0, 0, 0,
+nn0Threshold = 0
 
 
 def setBlockGlobalVariables(paramsList):
@@ -22,6 +23,12 @@ def setBlockGlobalVariables(paramsList):
     blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = paramsList.values()
     print('BlockWidthPx: '+str(blockWidthPx) +' - BlockHeightPx: '+str(blockHeightPx))
     print('BlocksPerRow: '+str(blocksPerRow) +' - BlockPerColumn: '+str(blocksPerColumn))
+
+
+def setThresholdGlobalVariable(blockHasChangedTh):
+    global nn0Threshold
+    nn0Threshold = int(round((blockHeightPx * blockWidthPx) * blockHasChangedTh * 3))
+    print('NN0 threshold: '+str(nn0Threshold)+'px')
 
 
 def showImageAndLock(name, img, numRow=None, numCol=None):
@@ -43,7 +50,6 @@ def saveImageAndLock(name, img, dest, numRow=None, numCol=None):
     cv2.imwrite(join(dest, name), restoreImage(img, numRow, numCol))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
 
 
 # Splits an image into an array of sub-images with shape blockHeight x blockWidth
@@ -145,22 +151,20 @@ def getMatchingRateo(reducedWindow1, reducedWindow2):
 
 
 # Subtracts corresponding subBlocks of two different images, and counts the amount of non-null pixels
-def performComparisons(imgArrayA, imgArrayB, blockHasChangedThreshold):
+def performComparisons(imgArrayA, imgArrayB):
     if len(imgArrayA) != len(imgArrayB):
         print('Impossible to compare image blocks, input images of different sizes...')
         return -1
 
     # The threshold is the number of pixels per block * the percentage of the block that must change to
     # consider the whole block as changed
-    # TODO check what happens with 3channels
-    threshold = (blockHeightPx * blockWidthPx) * blockHasChangedThreshold * 3
     hasBlockChanged = []
 
     for index, blockFromA in enumerate(imgArrayA):
         absoluteDiff = np.absolute(blockFromA - imgArrayB[index])
         # The total count of non zero valued pixels over the 3 channels
         nonZeroCount = np.count_nonzero(absoluteDiff)
-        if nonZeroCount > threshold:
+        if nonZeroCount > nn0Threshold:
             hasBlockChanged.append(True)
         else:
             hasBlockChanged.append(False)
@@ -271,7 +275,7 @@ def preprocessing(imgList, blockHasChangedThreshold, test=True):
         print('PREPROC - There are ' + str(len(listCopy)) + ' screens remaining!')
         for img in listCopy:
             comparisonsCount += 1
-            comparison = performComparisons(testImg, img[0], blockHasChangedThreshold)
+            comparison = performComparisons(testImg, img[0])
             possibleBanner, possibleBannerHeight = searchBannerPattern(comparison)
             if possibleBanner:
                 if test:
@@ -331,7 +335,7 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
 
             for imgIndex in range(tplValue["lastAddedIndex"], len(tplValue["images"])):
                 img = tplValue["images"][imgIndex][0]
-                blockComparisonsResults = performComparisons(img, testImg, blockHasChangedThreshold)
+                blockComparisonsResults = performComparisons(img, testImg)
 
                 distance = round(np.count_nonzero(blockComparisonsResults) / len(blockComparisonsResults), 3)
 
@@ -415,6 +419,7 @@ def main():
 
     # Setting up some global variable with blocks base information
     setBlockGlobalVariables(parameters["blockParams"])
+    setThresholdGlobalVariable(parameters["clusteringParams"]["blockHasChangedThreshold"])
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
@@ -522,7 +527,12 @@ def main():
             copy(workdir + '/input/screenshots/' + str(name[1]) + '.jpg', tplDir + str(name[1]) + '.jpg')
 
     end = time.time()
-    showClustersResults(templateCollection, workdir + '/output/'+cfgName+'_tplSummary.json', round(end - start,3))
+
+    classificationResDir = join(workdir, 'output', 'layoutDetectionRes')
+    if not exists(classificationResDir):
+        mkdir(classificationResDir)
+
+    showClustersResults(templateCollection, join(classificationResDir, cfgName+'_tplSummary.json'), round(end - start,3))
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start,3)))
 
 

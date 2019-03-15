@@ -1,0 +1,10 @@
+{
+  "clusteringParams":{
+    "core_window": {
+      "xStart": [20, 24, 1],
+      "xEnd": [64, 68, 1],
+      "yStart": 3,
+      "yEnd": 54
+    }
+  }
+}

@@ -11,16 +11,16 @@ import subprocess
 import logging as log
 
 testDirectoriesArray = [
-    ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo'),
+    ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano'),
+    ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
+    ('./testIOFolder/TestSuite9_wildCorriere/', 'corriere'),
+    ('./testIOFolder/TestSuite15_wildGazzetta/','gazzetta'),
     ('./testIOFolder/TestSuite7_wildSole24/', 'sole24'),
     ('./testIOFolder/TestSuite8_wildRepubblica/', 'repubblica'),
-    ('./testIOFolder/TestSuite9_wildCorriere/', 'corriere'),
+    ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo'),
     ('./testIOFolder/TestSuite11_wildAndroidWorld/', 'androidWorld'),
-    ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
     ('./testIOFolder/TestSuite13_wildAranzulla/','aranzulla'),
     ('./testIOFolder/TestSuite14_wildVirginRadio/','virginRadio'),
-    ('./testIOFolder/TestSuite15_wildGazzetta/','gazzetta'),
-    ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano')
 ]
 
 testDirectoriesArray1 = [
@@ -29,33 +29,129 @@ testDirectoriesArray1 = [
 
 
 class ClassificationThread(th.Thread):
-    def __init__(self, workdir, cfgFilesArray, name):
+    def __init__(self, workdir, cfgFilesArray, name, lock):
         th.Thread.__init__(self)
         self.workdir = workdir
         self.cfgFilesArray = cfgFilesArray
         self.name = name
         self.results = []
+        self.lock = lock
 
     def run(self):
-        for cfgFile in self.cfgFilesArray:
-            cfgName = cfgFile.split('/')[-1].split('.json')[0]
-            log.info(' Started classification task with ' + cfgName)
-            classifierProc = subprocess.call(['python3', 'clsf2_searchTplsAndClassifyScreens.py', self.workdir, cfgFile],
-                                              stdout=subprocess.DEVNULL)
-            log.info(' Completed classification task with ' + cfgName)
+        with self.lock:
+            log.info(' Starting thread!')
+            # Perform classification task for all configurations
+            for cfgFile in self.cfgFilesArray:
+                cfgName = cfgFile.split('/')[-1].split('.json')[0]
+                log.info(' Started classification task with ' + cfgName)
+                subprocess.call(['python3', 'clsf2_searchTplsAndClassifyScreens.py', self.workdir, cfgFile], stdout=subprocess.DEVNULL)
+                log.info(' Completed classification task with ' + cfgName)
 
-            evaluationProc = subprocess.call(
-                ['python3', 'clsfX_evaluateClassificationResults.py', self.workdir, 'optimal'],
-                stdout=subprocess.DEVNULL)
-            log.info(' Completed results evaluation for ' + cfgName)
+            # Evaluate comprehensive results
+            subprocess.call(['python3', 'clsfX_evaluateClassificationResults.py', self.workdir, 'optimal'],stdout=subprocess.DEVNULL)
+            log.info(' Completed results evaluation!')
+            # Cleaning workdir results
+            resDir = join(self.workdir, 'output', 'layoutDetectionRes')
+            rmtree(resDir)
 
             resFile = join(self.workdir, 'output', 'clsf_algorithmEvaluation.json')
             with open(resFile, 'r') as resFileData:
                 evaluation = json.load(resFileData)
                 resFileData.close()
 
-            self.results.append((cfgName, evaluation[cfgName]["overallComparison"]))
+            for cfgFile in self.cfgFilesArray:
+                cfgName = cfgFile.split('/')[-1].split('.json')[0]
+                self.results.append((cfgName, evaluation[cfgName]["overallComparison"]))
+
             log.info(' Completed execution!')
+
+
+
+def generateWindows(windowValues, defaultWindow):
+    windows = None
+    for dimKey, dimRange in windowValues.items():
+        if type(dimRange) is list and len(dimRange) == 3:
+            newWindows = []
+            for dimValue in arange(dimRange[0], dimRange[1], dimRange[2]):
+                if windows is None:
+                    newWindowObj = copy.deepcopy(defaultWindow)
+                    newWindowObj[dimKey] = int(round(dimValue, 3))
+                    newWindows.append(newWindowObj)
+                else:
+                    for window in windows:
+                        newWindowObj = copy.deepcopy(window)
+                        newWindowObj[dimKey] = int(round(dimValue, 3))
+                        newWindows.append(newWindowObj)
+            print('Produced ' + str(len(newWindows)) + ' windows varying dimension ' + str(dimKey))
+            windows = newWindows
+
+    if windows is None:
+        windows = [windowValues]
+    return windows
+
+
+def generateConfigs(testDataDir):
+    cfgFilesArray = []
+    # We have to generate the configuration files
+    with open(testDataDir + '/testArguments.json', 'r') as testArgFile:
+        testData = json.load(testArgFile)
+        testArgFile.close()
+    with open('./parametersFiles/default_clsfParams.json', 'r') as defaultParamsFile:
+        defaultParams = json.load(defaultParamsFile)
+        defaultParamsFile.close()
+
+    paramConfigObjects = None
+    for paramSetKey, paramSetValue in testData.items():
+        for paramKey, paramValue in paramSetValue.items():
+            windowParam = (paramKey == 'core_window' or paramKey == 'searchWindow')
+            if (type(paramValue) is list and len(paramValue) == 3) or windowParam:
+                newParamConfigObjects = []
+                print('Producing configs for parameter -- '+str(paramKey) + ' ' + paramSetKey)
+
+                if windowParam:
+                    newParamValues = generateWindows(paramValue, defaultParams[paramSetKey][paramKey])
+                else:
+                    newParamValues = arange(paramValue[0], paramValue[1], paramValue[2])
+
+                for value in newParamValues:
+                    if paramConfigObjects is None:
+                        newConfigObj = copy.deepcopy(defaultParams)
+                        if windowParam:
+                            newConfigObj[paramSetKey][paramKey] = value
+                        else:
+                            newConfigObj[paramSetKey][paramKey] = round(value, 3)
+                        newParamConfigObjects.append(newConfigObj)
+                    else:
+                        for configObj in paramConfigObjects:
+                            newConfigObj = copy.deepcopy(configObj)
+                            if windowParam:
+                                newConfigObj[paramSetKey][paramKey] = value
+                            else:
+                                newConfigObj[paramSetKey][paramKey] = round(value, 3)
+                            newParamConfigObjects.append(newConfigObj)
+                print('Produced ' + str(len(newParamConfigObjects)) + ' for param ' + str(paramKey))
+                paramConfigObjects = newParamConfigObjects
+                # print('Current length of configObjs '+str(len(paramConfigObjects)))
+
+    cfgFilesDir = testDataDir + '/cfgFiles/'
+    if exists(cfgFilesDir):
+        rmtree(cfgFilesDir)
+    mkdir(cfgFilesDir)
+
+    if paramConfigObjects is None:
+        print('Evaluating performances for default configuration!')
+        paramConfigObjects = [copy.deepcopy(defaultParams)]
+    else:
+        print('There are ' + str(len(paramConfigObjects)) + ' configurations in this test suite!')
+
+    for cfgIndex, configObj in enumerate(paramConfigObjects):
+        cfgFileName = cfgFilesDir + 'cfg' + format(cfgIndex, '03d') + '.json'
+        cfgFilesArray.append(cfgFileName)
+        with open(cfgFileName, 'w+') as cfgFile:
+            json.dump(configObj, cfgFile, indent=2)
+            cfgFile.close()
+
+    return cfgFilesArray
 
 
 def main():
@@ -67,55 +163,8 @@ def main():
         if sys.argv[2] == 'provided':
             provided = True
 
-    cfgFilesArray = []
-
     if not provided:
-        # We have to generate the configuration files
-        with open(testDataDir + '/testArguments.json', 'r') as testArgFile:
-            testData = json.load(testArgFile)
-            testArgFile.close()
-        with open('./parametersFiles/default_clsfParams.json', 'r') as defaultParamsFile:
-            defaultParams = json.load(defaultParamsFile)
-            defaultParamsFile.close()
-
-        paramConfigObjects = None
-        for paramSetKey, paramSetValue in testData.items():
-            for paramKey, paramValue in paramSetValue.items():
-                if type(paramValue) is list and len(paramValue) == 3:
-                    newParamConfigObjects = []
-                    # print('Producing configs for parameter -- '+str(paramKey))
-                    for value in arange(paramValue[0], paramValue[1], paramValue[2]):
-                        if paramConfigObjects is None:
-                            newConfigObj = copy.deepcopy(defaultParams)
-                            newConfigObj[paramSetKey][paramKey] = round(value, 3)
-                            newParamConfigObjects.append(newConfigObj)
-                        else:
-                            for configObj in paramConfigObjects:
-                                newConfigObj = copy.deepcopy(configObj)
-                                newConfigObj[paramSetKey][paramKey] = round(value, 3)
-                                newParamConfigObjects.append(newConfigObj)
-                    print('Produced ' + str(len(newParamConfigObjects)) + ' for param ' + str(paramKey))
-                    paramConfigObjects = newParamConfigObjects
-                    # print('Current length of configObjs '+str(len(paramConfigObjects)))
-
-        cfgFilesDir = testDataDir + '/cfgFiles/'
-        if exists(cfgFilesDir):
-            rmtree(cfgFilesDir)
-        mkdir(cfgFilesDir)
-
-        if paramConfigObjects is None:
-            print('Evaluating performances for default configuration!')
-            paramConfigObjects = [copy.deepcopy(defaultParams)]
-        else:
-            print('There are ' + str(len(paramConfigObjects)) + ' configurations in this test suite!')
-
-
-        for cfgIndex, configObj in enumerate(paramConfigObjects):
-            cfgFileName = cfgFilesDir + 'cfg' + format(cfgIndex, '03d') + '.json'
-            cfgFilesArray.append(cfgFileName)
-            with open(cfgFileName, 'w+') as cfgFile:
-                json.dump(configObj, cfgFile, indent=2)
-                cfgFile.close()
+        cfgFilesArray = generateConfigs(testDataDir)
     else:
         cfgDir = join(testDataDir, 'cfgFiles/')
         if not exists(cfgDir):
@@ -125,20 +174,17 @@ def main():
         print(cfgFilesArray)
 
 
-
     log.basicConfig(level=log.INFO, format='+++ %(threadName)s +++ %(message)s')
     thArray = []
-    for i in range(0, len(testDirectoriesArray), 4):
-        currentTh = []
-        currentTesting = testDirectoriesArray[i: min(i+4, len(testDirectoriesArray))]
-        for workdir in currentTesting:
-            classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1])
-            log.info(' Starting thread ' + workdir[1])
-            classificationTh.start()
-            thArray.append(classificationTh)
-            currentTh.append(classificationTh)
-        for current_th in currentTh:
-            current_th.join()
+    lockArray = [th.Lock(), th.Lock(), th.Lock()]
+    for index, workdir in enumerate(testDirectoriesArray):
+        classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1], lockArray[index % 3])
+        classificationTh.start()
+        thArray.append(classificationTh)
+
+    # Wait for thread termination
+    for thread in thArray:
+        thread.join()
 
     results = {
         "summary": {}
