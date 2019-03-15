@@ -124,7 +124,7 @@ def main():
         # We have to generate the configuration files
         cfgFilesArray = generateConfigs(testDataDir)
     else:
-        cfgDir = join(testDataDir, 'cfgFiles/')
+        cfgDir = join(testDataDir, 'cfgFiles')
         if not exists(cfgDir):
             print('Provided mode cannot be enabled as no cfgFiles directory is present!')
             return

@@ -1,0 +1,10 @@
+{
+  "xVar": "THRESHOLDS.NN0",
+  "yVar": "accuracy",
+  "xLabel": "nn0 threshold",
+  "yLabel": "Accuracy",
+  "multicurveVar": {
+    "var": "THRESHOLDS.PDE",
+    "legendLabel": "pde: "
+  }
+}

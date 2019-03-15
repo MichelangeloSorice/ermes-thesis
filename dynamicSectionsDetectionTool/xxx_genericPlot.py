@@ -20,11 +20,10 @@ def plotData(outFileName, curves):
     legend = []
     if len(curves)> 1:
         for curve in curves:
-            # TODO implement multicurve
-            continue
-    else:
-        pyplot.ylabel(yLabel)
-        pyplot.xlabel(xLabel)
+            legend.append(multicurveVar["legendLabel"]+ str(curve["multicurveValue"]))
+
+    pyplot.ylabel(yLabel)
+    pyplot.xlabel(xLabel)
 
     for curve in curves:
         pyplot.plot(curve['xValues'], curve['yValues'])
@@ -43,31 +42,57 @@ def accessValue(structuredObj, keysList):
     return value
 
 
-def buildCurves(testDataCollection, cfgData):
+# Extracts sorted xValues and yValues
+def getXYValues(testData, cfgData):
     xKeys = xVar.split('.')
+    # Sorted list of xVar values and their cfgName
+    xTuples = []
+    # Actual xValues and yValues
+    xValues, yValues = [], []
+    for cfgKey, cfgValue in cfgData.items():
+        xTuples.append((cfgKey, accessValue(cfgValue, xKeys)))
+    # Sort xValues in ascending order
+    xTuples = sorted(xTuples, key=lambda elem: elem[1])
+
+    for xtuple in xTuples:
+        # access the yvalue associated to this xValue
+        yValues.append(testData[xtuple[0]][yVar])
+        xValues.append(xtuple[1])
+
+    return xValues, yValues
+
+
+def buildCurves(testDataCollection, cfgData):
     curves = []
 
     if multicurveVar == "":
-        # Sorted list of xVar values and their cfgName
-        xTuples = []
-        # Actual xValues and yValues
-        xValues, yValues = [], []
-        for cfgKey, cfgValue in cfgData.items():
-            xTuples.append((cfgKey, accessValue(cfgValue, xKeys)))
-        # Sort xValues in ascending order
-        xTuples = sorted(xTuples, key=lambda elem: elem[1])
-
-        for xtuple in xTuples:
-            # access the yvalue associated to this xValue
-            yValues.append(testDataCollection[xtuple[0]][yVar])
-            xValues.append(xtuple[1])
-
+        xValues, yValues = getXYValues(testDataCollection, cfgData)
         curves.append({
             "xValues": xValues,
             "yValues": yValues,
         })
 
+    else:
+        # Keeps cfgData associated to a certain value of the multicurve variable
+        multiCurveValueCfgsDictionary = {}
+        for cfgKey, cfgValue in cfgData.items():
+            multicurveValue = accessValue(cfgValue, multicurveVar["var"])
+            if not multicurveValue in multiCurveValueCfgsDictionary:
+                multiCurveValueCfgsDictionary[multicurveValue] = {}
+            multiCurveValueCfgsDictionary[multicurveValue][cfgKey] = cfgValue
+
+        sortedMultiCurveValues = sorted(multiCurveValueCfgsDictionary.keys())
+
+        for multicurveValue in sortedMultiCurveValues:
+            xValues, yValues = getXYValues(testDataCollection, multiCurveValueCfgsDictionary[multicurveValue])
+            curves.append({
+                "xValues": xValues,
+                "yValues": yValues,
+                "multicurveValue": multicurveValue
+            })
+
     return curves
+
 
 def main():
     # Dir of interest, must contain the results of a certain test
