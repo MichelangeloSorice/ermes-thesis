@@ -77,7 +77,7 @@ def buildCurves(testDataCollection, cfgData):
         # Keeps cfgData associated to a certain value of the multicurve variable
         multiCurveValueCfgsDictionary = {}
         for cfgKey, cfgValue in cfgData.items():
-            multicurveValue = accessValue(cfgValue, multicurveVar["var"])
+            multicurveValue = accessValue(cfgValue, multicurveVar["var"].split('.'))
             if not multicurveValue in multiCurveValueCfgsDictionary:
                 multiCurveValueCfgsDictionary[multicurveValue] = {}
             multiCurveValueCfgsDictionary[multicurveValue][cfgKey] = cfgValue

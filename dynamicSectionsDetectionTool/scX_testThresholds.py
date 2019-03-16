@@ -155,7 +155,7 @@ def main():
                 results[resTuple[0]] = {}
             results[resTuple[0]][classificationTh.name] = resTuple[1]
 
-    print(results)
+    #print(results)
 
     for cfg, cfgRes in results.items():
         if cfg == "summary":
@@ -169,7 +169,7 @@ def main():
         precision = round(
             sum(res["countTP"] for res in cfgRes.values()) / sum(res["countPP"] for res in cfgRes.values()), 3)
         accuracy = round(
-            sum(res["countTP"]+res["countTN"] for res in cfgRes.values()) / sum(res["totalP"]+res["totalT"] for res in cfgRes.values()), 3)
+            sum(res["countTP"]+res["countTN"] for res in cfgRes.values()) / sum(res["totalP"]+res["totalN"] for res in cfgRes.values()), 3)
         results["summary"][cfg] = {
             "truePositiveRate": truePositiveRate,
             "falsePositiveRate": falsePositiveRate,
