@@ -1,7 +1,7 @@
 {
-  "xVar": "clusteringParams.highLevel_minDistance",
+  "xVar": "clusteringParams.highLevel_maxDistance",
   "yVar": "avgCorrectlyClassifiedImgs",
-  "xLabel": "highLvlMinDist",
+  "xLabel": "highLvlMaxDist",
   "yLabel": "Accuracy",
   "multicurveVar": ""
 }

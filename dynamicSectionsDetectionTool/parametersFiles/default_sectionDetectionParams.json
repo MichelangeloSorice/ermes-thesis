@@ -1,7 +1,7 @@
 {
   "blockConfig": "default",
   "THRESHOLDS": {
-    "NN0": 0.6,
+    "NN0": 0.65,
     "PDE": 0.6
   },
   "additionalParams": {
