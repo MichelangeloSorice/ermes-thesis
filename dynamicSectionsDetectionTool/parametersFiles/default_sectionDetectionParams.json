@@ -1,7 +1,10 @@
 {
   "blockConfig": "default",
   "THRESHOLDS": {
-    "NN0": 0.45,
-    "PDE": 0.7
+    "NN0": 0.6,
+    "PDE": 0.6
+  },
+  "additionalParams": {
+    "limitCaptures": 0
   }
 }

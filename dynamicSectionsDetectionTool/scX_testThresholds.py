@@ -73,12 +73,16 @@ def generateConfigs(testDataDir):
 
     paramConfigObjects = None
     for paramSetKey, paramSetValue in testData.items():
+        if not isinstance(paramSetValue, dict):
+            continue
         for paramKey, paramValue in paramSetValue.items():
             if type(paramValue) is list and len(paramValue) == 3:
                 newParamConfigObjects = []
                 print('Producing configs for parameter -- '+str(paramKey) + ' ' + paramSetKey)
 
                 for value in arange(paramValue[0], paramValue[1], paramValue[2]):
+                    # Converting value to nearest python type
+                    value = value.item()
                     if paramConfigObjects is None:
                         newConfigObj = copy.deepcopy(defaultParams)
                         newConfigObj[paramSetKey][paramKey] = round(value, 3)

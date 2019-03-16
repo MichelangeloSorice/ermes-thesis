@@ -1,0 +1,9 @@
+{
+  "THRESHOLDS": {
+    "NN0": 0.45,
+    "PDE": 0.7
+  },
+  "additionalParams": {
+    "limitCaptures": [100, 20, -1]
+  }
+}

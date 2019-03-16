@@ -73,14 +73,16 @@ def generateWindows(windowValues, defaultWindow):
         if type(dimRange) is list and len(dimRange) == 3:
             newWindows = []
             for dimValue in arange(dimRange[0], dimRange[1], dimRange[2]):
+                # Converting value to nearest python type
+                dimValue = dimValue.item()
                 if windows is None:
                     newWindowObj = copy.deepcopy(defaultWindow)
-                    newWindowObj[dimKey] = int(round(dimValue, 3))
+                    newWindowObj[dimKey] = round(dimValue, 3)
                     newWindows.append(newWindowObj)
                 else:
                     for window in windows:
                         newWindowObj = copy.deepcopy(window)
-                        newWindowObj[dimKey] = int(round(dimValue, 3))
+                        newWindowObj[dimKey] = round(dimValue, 3)
                         newWindows.append(newWindowObj)
             print('Produced ' + str(len(newWindows)) + ' windows varying dimension ' + str(dimKey))
             windows = newWindows
@@ -102,6 +104,8 @@ def generateConfigs(testDataDir):
 
     paramConfigObjects = None
     for paramSetKey, paramSetValue in testData.items():
+        if not isinstance(paramSetValue, dict):
+            continue
         for paramKey, paramValue in paramSetValue.items():
             windowParam = (paramKey == 'core_window' or paramKey == 'searchWindow')
             if (type(paramValue) is list and len(paramValue) == 3) or windowParam:
@@ -114,6 +118,9 @@ def generateConfigs(testDataDir):
                     newParamValues = arange(paramValue[0], paramValue[1], paramValue[2])
 
                 for value in newParamValues:
+                    if not windowParam:
+                        # Converting value to nearest python type
+                        value = value.item()
                     if paramConfigObjects is None:
                         newConfigObj = copy.deepcopy(defaultParams)
                         if windowParam:

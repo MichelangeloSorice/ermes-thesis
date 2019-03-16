@@ -35,7 +35,7 @@ def evalPde(pde, threshold):
     return False
 
 
-def computePerBlockDynamicEvaluations(captureData, thresholds, comparisonsCount):
+def computePerBlockDynamicEvaluations(captureData, thresholds, comparisonsCount, limitCaptures):
     NN0, PDE = thresholds.values()
     evaluateBlockNn0Counts = np.vectorize(countNN0OverThreshold, otypes=[np.uint16])
     evaluateDynamicBlocks = np.vectorize(evalPde, otypes=[np.bool])
@@ -46,6 +46,11 @@ def computePerBlockDynamicEvaluations(captureData, thresholds, comparisonsCount)
     nn0Threshold = (blockHeightPx*blockWidthPx*nChannels)*NN0
     # Splitting the raw analysis data into arrays corresponding to the NN= values of each comparison
     comparisonsResults = np.split(captureData, comparisonsCount)
+
+    # Evaluating only comparisons related to a certain capture set
+    if limitCaptures > 0:
+        comparisonsCount = ((limitCaptures*(limitCaptures-1)) // 2)
+        comparisonsResults = comparisonsResults[-comparisonsCount:]
 
     for comparison in comparisonsResults:
         # We get an array containing a 0 for each static evaluation and a 1 for each dynamic one
@@ -126,7 +131,10 @@ def main():
     setBlockGlobalVariables(captureAnalysisMetaInfo['blockParams'])
 
     captureData = np.load(join(analysisDataDir, 'resData.npy'))
-    isBlockDynamic = computePerBlockDynamicEvaluations(captureData, sectionDetectionParams['THRESHOLDS'], captureAnalysisMetaInfo['comparisonsCount'])
+    isBlockDynamic = computePerBlockDynamicEvaluations(captureData,
+                                                       sectionDetectionParams['THRESHOLDS'],
+                                                       captureAnalysisMetaInfo['comparisonsCount'],
+                                                       sectionDetectionParams['additionalParams']['limitCaptures'])
 
     end = time.time()
     print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start, 3)))
