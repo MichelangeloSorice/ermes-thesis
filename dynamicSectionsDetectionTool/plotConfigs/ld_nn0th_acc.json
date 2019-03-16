@@ -1,0 +1,7 @@
+{
+  "xVar": "clusteringParams.blockHasChangedThreshold",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "NN0 threshold",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

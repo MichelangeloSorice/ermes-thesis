@@ -24,38 +24,41 @@ testDirectoriesArray1 = [
 
 
 class ClassificationThread(th.Thread):
-    def __init__(self, workdir, cfgFilesArray, name):
+    def __init__(self, workdir, cfgFilesArray, name, thlock):
         th.Thread.__init__(self)
         self.workdir = workdir
         self.cfgFilesArray = cfgFilesArray
         self.name = name
         self.results = []
+        self.lock = thlock
 
     def run(self):
-        # Perform classification task for all configurations
-        for cfgFile in self.cfgFilesArray:
-            cfgName = cfgFile.split('/')[-1].split('.json')[0]
-            log.info(' Started detection task with ' + cfgName)
-            subprocess.call(['python3', 'sc1_computeDynamicSections.py', self.workdir, cfgFile], stdout=subprocess.DEVNULL)
-            log.info(' Completed classification task with ' + cfgName)
+        with self.lock:
+            log.info(' Starting execution!')
+            # Perform classification task for all configurations
+            for cfgFile in self.cfgFilesArray:
+                cfgName = cfgFile.split('/')[-1].split('.json')[0]
+                log.info(' Started detection task with ' + cfgName)
+                subprocess.call(['python3', 'sc1_computeDynamicSections.py', self.workdir, cfgFile], stdout=subprocess.DEVNULL)
+                log.info(' Completed classification task with ' + cfgName)
 
-        # Evaluate comprehensive results
-        subprocess.call(['python3', 'scX_evaluteSecDetectionResults.py', self.workdir], stdout=subprocess.DEVNULL)
-        log.info(' Completed results evaluation!')
-        # Cleaning workdir results
-        resDir = join(self.workdir, 'output', 'results')
-        rmtree(resDir)
+            # Evaluate comprehensive results
+            subprocess.call(['python3', 'scX_evaluteSecDetectionResults.py', self.workdir], stdout=subprocess.DEVNULL)
+            log.info(' Completed results evaluation!')
+            # Cleaning workdir results
+            resDir = join(self.workdir, 'output', 'results')
+            rmtree(resDir)
 
-        resFile = join(self.workdir, 'output', 'secDetection_perCfgResults.json')
-        with open(resFile, 'r') as resFileData:
-            evaluation = json.load(resFileData)
-            resFileData.close()
+            resFile = join(self.workdir, 'output', 'secDetection_perCfgResults.json')
+            with open(resFile, 'r') as resFileData:
+                evaluation = json.load(resFileData)
+                resFileData.close()
 
-        for cfgFile in self.cfgFilesArray:
-            cfgName = cfgFile.split('/')[-1].split('.json')[0]
-            self.results.append((cfgName, evaluation[cfgName]))
+            for cfgFile in self.cfgFilesArray:
+                cfgName = cfgFile.split('/')[-1].split('.json')[0]
+                self.results.append((cfgName, evaluation[cfgName]))
 
-        log.info(' Completed execution!')
+            log.info(' Completed execution!')
 
 
 def generateConfigs(testDataDir):

@@ -154,12 +154,8 @@ def main():
 
     np.save(join(resultSpecificDir, cfgName+'_changesMap'), isBlockDynamic)
     # Compute and store a visual representation of the result showing dynamic area as Black blocks on a blank img
-    res = computeVisualResult((isBlockDynamic.tolist())[0],  join(resultSpecificDir, cfgName+'_visualResult.png'))
+    computeVisualResult((isBlockDynamic.tolist())[0],  join(resultSpecificDir, cfgName+'_visualResult.png'))
 
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-    cv2.imshow('image', res)
-    cv2.waitKey(5000)
-    cv2.destroyAllWindows()
 
 
 main()

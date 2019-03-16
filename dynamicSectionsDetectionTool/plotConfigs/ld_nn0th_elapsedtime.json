@@ -1,0 +1,7 @@
+{
+  "xVar": "clusteringParams.blockHasChangedThreshold",
+  "yVar": "avgElapsedTime",
+  "xLabel": "NN0 threshold",
+  "yLabel": "Time in seconds",
+  "multicurveVar": ""
+}

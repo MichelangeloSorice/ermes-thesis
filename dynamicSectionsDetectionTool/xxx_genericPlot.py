@@ -28,7 +28,8 @@ def plotData(outFileName, curves):
     for curve in curves:
         pyplot.plot(curve['xValues'], curve['yValues'])
 
-    pyplot.legend(legend, loc='best')
+    if len(legend) > 0:
+        pyplot.legend(legend, loc='best')
     pyplot.savefig(outFileName)
 
     return
