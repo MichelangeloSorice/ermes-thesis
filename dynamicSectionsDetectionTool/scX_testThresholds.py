@@ -24,16 +24,16 @@ testDirectoriesArray1 = [
 
 
 class ClassificationThread(th.Thread):
-    def __init__(self, workdir, cfgFilesArray, name, thlock):
+    def __init__(self, workdir, cfgFilesArray, name, semaphore):
         th.Thread.__init__(self)
         self.workdir = workdir
         self.cfgFilesArray = cfgFilesArray
         self.name = name
         self.results = []
-        self.lock = thlock
+        self.semaphore = semaphore
 
     def run(self):
-        with self.lock:
+        with self.semaphore:
             log.info(' Starting execution!')
             # Perform classification task for all configurations
             for cfgFile in self.cfgFilesArray:
@@ -136,9 +136,9 @@ def main():
 
     log.basicConfig(level=log.INFO, format='+++ %(threadName)s +++ %(message)s')
     thArray = []
-    lockArray = [th.Lock(), th.Lock(), th.Lock()]
-    for index, workdir in enumerate(testDirectoriesArray):
-        classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1], lockArray[index % 3])
+    threadSemaphore = th.Semaphore(3)
+    for workdir in testDirectoriesArray:
+        classificationTh = ClassificationThread(workdir[0], cfgFilesArray, workdir[1], threadSemaphore)
         classificationTh.start()
         thArray.append(classificationTh)
 
