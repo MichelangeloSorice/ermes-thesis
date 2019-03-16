@@ -1,5 +1,5 @@
 {
-  "xVar": "clusteringParams.baseBlockHeight",
+  "xVar": "blockParams.baseBlockHeight",
   "yVar": "avgElapsedTime",
   "xLabel": "Block size in px",
   "yLabel": "Computation time",

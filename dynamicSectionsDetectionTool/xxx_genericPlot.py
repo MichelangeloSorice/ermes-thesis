@@ -30,8 +30,9 @@ def plotData(outFileName, curves):
 
     if len(legend) > 0:
         pyplot.legend(legend, loc='best')
-    pyplot.savefig(outFileName)
 
+    pyplot.savefig(outFileName+'.eps', format='eps', dpi=1200, bbox_inches='tight')
+    pyplot.savefig(outFileName+'.png', bbox_inches='tight')
     return
 
 
@@ -121,17 +122,22 @@ def main():
         with open(join(cfgFilesDir, file), 'r') as cfgFile:
             configsData[cfgName] = json.load(cfgFile)
 
+    # Building curves data
+    curves = buildCurves(testDataCollection, configsData)
+
     plotOutFolder = join(workdir, 'plots')
     if not exists(plotOutFolder):
         mkdir(plotOutFolder)
+    plotOutDataDir = join(plotOutFolder, 'raw_data')
+    if not exists(plotOutDataDir):
+        mkdir(plotOutDataDir)
 
-    plotOutFile = join(plotOutFolder, plotConfig+'.png')
+    # Compute and store graphic representation of classification metrics
+    plotData(join(plotOutFolder, plotConfig), curves)
 
-    # Compute a graphic representation of classification metrics
-    plotData(plotOutFile, buildCurves(testDataCollection, configsData))
-
-
-
+    # Dumping raw data plotted
+    with open(join(plotOutDataDir, plotConfig+'.json'), 'w') as rawdata:
+        json.dump(curves, rawdata, indent=2)
 
 # +++++ Script Entrypoint
 main()

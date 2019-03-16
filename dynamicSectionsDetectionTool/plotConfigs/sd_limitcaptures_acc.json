@@ -1,0 +1,7 @@
+{
+  "xVar": "additionalParams.limitCaptures",
+  "yVar": "accuracy",
+  "xLabel": "Evaluated captures",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

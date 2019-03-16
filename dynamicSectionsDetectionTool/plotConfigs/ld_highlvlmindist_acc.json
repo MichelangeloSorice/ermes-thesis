@@ -1,0 +1,7 @@
+{
+  "xVar": "clusteringParams.highLevel_minDistance",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "NN0 threshold",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}
