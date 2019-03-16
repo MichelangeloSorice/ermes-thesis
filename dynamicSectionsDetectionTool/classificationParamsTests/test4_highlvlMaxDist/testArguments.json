@@ -1,0 +1,5 @@
+{
+  "clusteringParams":{
+    "highLevel_maxDistance": [0.65, 0.95, 0.02]
+  }
+}
