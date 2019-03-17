@@ -21,14 +21,14 @@ nn0Threshold = 0
 def setBlockGlobalVariables(paramsList):
     global blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn
     blockHeightPx, blockWidthPx, blocksPerRow, blocksPerColumn = paramsList.values()
-    print('BlockWidthPx: '+str(blockWidthPx) +' - BlockHeightPx: '+str(blockHeightPx))
-    print('BlocksPerRow: '+str(blocksPerRow) +' - BlockPerColumn: '+str(blocksPerColumn))
+    print('BlockWidthPx: ' + str(blockWidthPx) + ' - BlockHeightPx: ' + str(blockHeightPx))
+    print('BlocksPerRow: ' + str(blocksPerRow) + ' - BlockPerColumn: ' + str(blocksPerColumn))
 
 
 def setThresholdGlobalVariable(blockHasChangedTh):
     global nn0Threshold
     nn0Threshold = int(round((blockHeightPx * blockWidthPx) * blockHasChangedTh * 3))
-    print('NN0 threshold: '+str(nn0Threshold)+'px')
+    print('NN0 threshold: ' + str(nn0Threshold) + 'px')
 
 
 def showImageAndLock(name, img, numRow=None, numCol=None):
@@ -109,6 +109,7 @@ def computeVisualResult(isBlockDynamic, numRow=None, numCol=None):
     cv2.waitKey(0)
     return res
 
+
 def saveVisualResult(isBlockDynamic, dest, numRow=None, numCol=None):
     # Generating black and white blocks with correct shape
     blackBlock = np.zeros((blockHeightPx, blockWidthPx, 3), dtype=np.uint8)
@@ -176,11 +177,12 @@ def searchPatterns(blockComparisons, patternParams, maxWidth=None):
     if maxWidth is None:
         maxWidth = blocksPerRow
     consecutiveSubPatternsThreshold, consecutiveStaticBlocksInSubPattern, consecutiveDynamicBlocksInSubPattern, \
-    searchWindow = patternParams.values()
+    windowXStart, windowYStart, windowXSpan, windowYSpan = patternParams.values()
+    windowXEnd = windowXStart + windowXSpan
+    windowYEnd = windowYStart + windowYSpan
     # Searching for pattern
     patternCounter = 0
-    windowXStart, windowXEnd, windowdYStart, windowYEnd = searchWindow.values()
-    limit = maxWidth * (windowYEnd - windowdYStart)
+    limit = maxWidth * windowYSpan
     for x in range(windowXStart, windowXEnd):
         previousBlock = blockComparisons[x]
         if previousBlock is True:
@@ -266,7 +268,7 @@ def searchBannerPattern(comparison, maxWidth=None, maxHeight=None):
     return False, 0
 
 
-def preprocessing(imgList, blockHasChangedThreshold, test=True):
+def preprocessing(imgList, test=True):
     listCopy = imgList.copy()
     votesDictionary = dict()
     comparisonsCount = 0
@@ -281,7 +283,7 @@ def preprocessing(imgList, blockHasChangedThreshold, test=True):
                 if test:
                     saveImageAndLock('img.jpg', img[0], '.')
                     saveImageAndLock('testImg.jpg', testImg, '.')
-                    saveVisualResult(comparison,'./fullComp.jpg')
+                    saveVisualResult(comparison, './fullComp.jpg')
 
                 if not (possibleBannerHeight in votesDictionary):
                     votesDictionary[possibleBannerHeight] = 1
@@ -312,7 +314,10 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
     # expanding thresholds parameters:
     blockHasChangedThreshold, \
     highLvl_minDistance, highLvl_maxDistance, \
-    core_minDistance, core_maxDistance, core_window = clusteringThresholds.values()
+    core_minDistance, core_maxDistance, \
+    xStart, yStart, xSpan, ySpan = clusteringThresholds.values()
+    xEnd = xStart + xSpan
+    yEnd = yStart + ySpan
 
     while len(imgList) >= 1:
         print('STEP 0 - There are ' + str(len(imgList)) + ' screens to be tested for this iteration')
@@ -350,7 +355,6 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                     break
 
                 # core_window contains window horizontal and vertical start and end
-                xStart, xEnd, yStart, yEnd = core_window.values()
                 comparisonReduced = getReducedWindow(blockComparisonsResults, [xStart, xEnd], [yStart, yEnd])
 
                 distanceForReducedWindow = round(np.count_nonzero(comparisonReduced) / len(comparisonReduced), 3)
@@ -385,7 +389,7 @@ def performClustering(imgList, templateCollection, lastTplIndex, clusteringThres
                 print('STEP 0 - Unmatchable screen found, creating new template!')
                 lastTplIndex += 1
                 templateCollection["tpl" + str(lastTplIndex)] = {
-                    "images": [(testImgTriple[0],testImgTriple[1])],
+                    "images": [(testImgTriple[0], testImgTriple[1])],
                     "flagChanged": False,
                     "previousIterationLength": 0
                 }
@@ -440,7 +444,7 @@ def main():
     baseImgTest = cv2.imread(baseImgName, cv2.IMREAD_UNCHANGED)
     # Each img is stored as a tuple (splittedImg, imgName)
     baseImgTuple = (splitImage(baseImgTest, blockHeightPx, blockWidthPx),
-                    int(baseImgName.split('screenshots/')[1].split('.')[0])) # array of incompatible tpls
+                    int(baseImgName.split('screenshots/')[1].split('.')[0]))  # array of incompatible tpls
 
     # Getting a splitted version of all images, their name, and creating an object to store templates data
     imgList = [(splitImage(cv2.imread(imgFileName, cv2.IMREAD_UNCHANGED), blockHeightPx, blockWidthPx),
@@ -448,14 +452,14 @@ def main():
                 {}) for imgFileName in fileList]
 
     # use this if you need to get visualResult of comparisons on the fly
-    #comparison = performComparisons(baseImgTuple[0], imgList[0][0], 0.4)
-    #res = computeVisualResult(comparison)
-    #cv2.imwrite(join(workdir, 'visualResult.jpg'), res)
+    # comparison = performComparisons(baseImgTuple[0], imgList[0][0], 0.4)
+    # res = computeVisualResult(comparison)
+    # cv2.imwrite(join(workdir, 'visualResult.jpg'), res)
 
     # Here is a mechanism to find out the presence of low level banners
     # Currently commented as too slow
     # TODO implement multithread solution for preprocessing
-    #possibleBanner, supposedHeight = preprocessing(imgList,  parameters["clusteringParams"]["blockHasChangedThreshold"])
+    # possibleBanner, supposedHeight = preprocessing(imgList,  parameters["clusteringParams"]["blockHasChangedThreshold"])
 
     templateCollection = {
         "tpl0": {
@@ -507,7 +511,7 @@ def main():
             randomImgTuple = imgList.pop()
             lastTplIndex += 1
             templateCollection["tpl" + str(lastTplIndex)] = {
-                "images": [(randomImgTuple[0], randomImgTuple[1])], # trimming template infos
+                "images": [(randomImgTuple[0], randomImgTuple[1])],  # trimming template infos
                 "flagChanged": False,
                 "previousIterationLength": 0,
                 "lastAddedIndex": 0
@@ -532,8 +536,9 @@ def main():
     if not exists(classificationResDir):
         mkdir(classificationResDir)
 
-    showClustersResults(templateCollection, join(classificationResDir, cfgName+'_tplSummary.json'), round(end - start,3))
-    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start,3)))
+    showClustersResults(templateCollection, join(classificationResDir, cfgName + '_tplSummary.json'),
+                        round(end - start, 3))
+    print('++++ Execution completed at ' + str(end) + ' - elapsed time: ' + str(round(end - start, 3)))
 
 
 # +++++ Script Entrypoint

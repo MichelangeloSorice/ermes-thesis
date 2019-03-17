@@ -1,0 +1,8 @@
+{
+  "clusteringParams":{
+    "core_windowXStart":26,
+    "core_windowYStart": [0, 4, 1],
+    "core_windowXSpan":44,
+    "core_windowYSpan":[46, 50, 1]
+  }
+}

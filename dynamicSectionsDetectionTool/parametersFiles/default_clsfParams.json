@@ -11,22 +11,18 @@
     "highLevel_maxDistance": 0.91,
     "core_minDistance": 0.2,
     "core_maxDistance": 0.7,
-    "core_window": {
-      "xStart": 26,
-      "xEnd": 66,
-      "yStart": 3,
-      "yEnd": 54
-    }
+    "core_windowXStart":26,
+    "core_windowYStart":3,
+    "core_windowXSpan":40,
+    "core_windowYSpan":51
   },
-  "patternParams":{
+  "patternParams": {
     "consecutiveSubPatterns": 6,
     "consecutiveStaticBlocks": 8,
     "consecutiveDynamicBlocks": 4,
-    "searchWindow": {
-      "xStart": 26,
-      "xEnd": 70,
-      "yStart": 0,
-      "yEnd": 53
-    }
+    "windowXStart":26,
+    "windowYStart":0,
+    "windowXSpan":44,
+    "windowYSpan":53
   }
 }
