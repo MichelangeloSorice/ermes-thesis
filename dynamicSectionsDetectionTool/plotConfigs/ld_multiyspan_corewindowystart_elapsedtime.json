@@ -2,7 +2,7 @@
   "xVar": "clusteringParams.core_windowYStart",
   "yVar": "avgElapsedTime",
   "xLabel": "Window starting row",
-  "yLabel": "Time in seconds",
+  "yLabel": "Computation time",
   "multicurveVar": {
     "var": "clusteringParams.core_windowYSpan",
     "legendLabel": "Height: "

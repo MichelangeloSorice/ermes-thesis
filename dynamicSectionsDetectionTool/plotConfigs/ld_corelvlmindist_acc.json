@@ -1,0 +1,7 @@
+{
+  "xVar": "clusteringParams.core_minDistance",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "coreLvlMinDist",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

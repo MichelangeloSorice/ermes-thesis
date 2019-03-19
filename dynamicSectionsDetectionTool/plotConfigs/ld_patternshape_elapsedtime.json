@@ -2,7 +2,7 @@
   "xVar": "patternParams.consecutiveStaticBlocks",
   "yVar": "avgElapsedTime",
   "xLabel": "Consecutive static blocks:",
-  "yLabel": "Accuracy",
+  "yLabel": "Computation time",
   "multicurveVar": {
     "var": "patternParams.consecutiveDynamicBlocks",
     "legendLabel": "Consecutive dynamic blocks: "

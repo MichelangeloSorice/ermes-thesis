@@ -1,0 +1,7 @@
+{
+  "xVar": "clusteringParams.core_minDistance",
+  "yVar": "avgElapsedTime",
+  "xLabel": "coreLvlMinDist",
+  "yLabel": "Computation time",
+  "multicurveVar": ""
+}
