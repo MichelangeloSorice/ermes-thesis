@@ -1,10 +1,10 @@
 {
-  "xVar": "clusteringParams.core_windowXStart",
+  "xVar": "clusteringParams.core_windowYStart",
   "yVar": "avgElapsedTime",
   "xLabel": "Window starting row",
-  "yLabel": "Accuracy",
+  "yLabel": "Time in seconds",
   "multicurveVar": {
-    "var": "clusteringParams.core_windowXSpan",
+    "var": "clusteringParams.core_windowYSpan",
     "legendLabel": "Height: "
   }
 }

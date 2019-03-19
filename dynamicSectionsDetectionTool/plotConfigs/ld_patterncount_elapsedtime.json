@@ -1,0 +1,7 @@
+{
+  "xVar": "patternParams.consecutiveSubPatterns",
+  "yVar": "avgElapsedTime",
+  "xLabel": "Consecutive sub patterns:",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

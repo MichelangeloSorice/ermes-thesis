@@ -1,0 +1,6 @@
+{
+  "patternParams": {
+    "consecutiveStaticBlocks": [4, 13, 1],
+    "consecutiveDynamicBlocks": [0, 8, 2]
+  }
+}

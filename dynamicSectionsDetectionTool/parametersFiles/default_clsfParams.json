@@ -11,14 +11,14 @@
     "highLevel_maxDistance": 0.91,
     "core_minDistance": 0.2,
     "core_maxDistance": 0.7,
-    "core_windowXStart":26,
+    "core_windowXStart":23,
     "core_windowYStart":3,
-    "core_windowXSpan":40,
-    "core_windowYSpan":51
+    "core_windowXSpan":44,
+    "core_windowYSpan":46
   },
   "patternParams": {
-    "consecutiveSubPatterns": 6,
-    "consecutiveStaticBlocks": 8,
+    "consecutiveSubPatterns": 8,
+    "consecutiveStaticBlocks": 6,
     "consecutiveDynamicBlocks": 4,
     "windowXStart":26,
     "windowYStart":0,

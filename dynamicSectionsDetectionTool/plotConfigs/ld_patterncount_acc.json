@@ -1,0 +1,7 @@
+{
+  "xVar": "patternParams.consecutiveSubPatterns",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "Consecutive sub patterns:",
+  "yLabel": "Accuracy",
+  "multicurveVar": ""
+}

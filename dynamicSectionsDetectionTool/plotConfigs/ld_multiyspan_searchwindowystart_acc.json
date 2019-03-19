@@ -1,0 +1,10 @@
+{
+  "xVar": "patternParams.windowYStart",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "Window starting row",
+  "yLabel": "Accuracy",
+  "multicurveVar": {
+    "var": "clusteringParams.windowYSpan",
+    "legendLabel": "Height: "
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "clusteringParams":{
+    "core_minDistance": [0.15, 0.45, 0.02]
+  }
+}

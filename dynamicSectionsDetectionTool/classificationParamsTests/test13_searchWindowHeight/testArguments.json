@@ -1,0 +1,6 @@
+{
+  "patternParams":{
+    "windowYStart":[0, 10, 1],
+    "windowYSpan":[50, 54, 1]
+  }
+}
