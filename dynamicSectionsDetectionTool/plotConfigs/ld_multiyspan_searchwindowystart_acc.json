@@ -4,7 +4,7 @@
   "xLabel": "Window starting row",
   "yLabel": "Accuracy",
   "multicurveVar": {
-    "var": "clusteringParams.windowYSpan",
+    "var": "patternParams.windowYSpan",
     "legendLabel": "Height: "
   }
 }

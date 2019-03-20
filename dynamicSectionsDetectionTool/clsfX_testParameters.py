@@ -12,11 +12,11 @@ import logging as log
 
 testDirectoriesArray = [
     ('./testIOFolder/TestSuite16_wildFattoQuotidiano/','fattoQuotidiano'),
-    ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
     ('./testIOFolder/TestSuite9_wildCorriere/', 'corriere'),
     ('./testIOFolder/TestSuite15_wildGazzetta/','gazzetta'),
     ('./testIOFolder/TestSuite7_wildSole24/', 'sole24'),
     ('./testIOFolder/TestSuite8_wildRepubblica/', 'repubblica'),
+    ('./testIOFolder/TestSuite12_wildHwUpgrade/','hwUpgrade'),
     ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo'),
     ('./testIOFolder/TestSuite11_wildAndroidWorld/', 'androidWorld'),
     ('./testIOFolder/TestSuite13_wildAranzulla/','aranzulla'),

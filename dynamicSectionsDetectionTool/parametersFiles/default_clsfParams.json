@@ -8,9 +8,9 @@
   "clusteringParams":{
     "blockHasChangedThreshold": 0.133,
     "highLevel_minDistance": 0.15,
-    "highLevel_maxDistance": 0.91,
-    "core_minDistance": 0.2,
-    "core_maxDistance": 0.7,
+    "highLevel_maxDistance": 0.83,
+    "core_minDistance": 0.19,
+    "core_maxDistance": 0.55,
     "core_windowXStart":23,
     "core_windowYStart":3,
     "core_windowXSpan":44,
