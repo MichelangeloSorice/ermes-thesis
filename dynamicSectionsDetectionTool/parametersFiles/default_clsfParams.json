@@ -17,10 +17,10 @@
     "core_windowYSpan":46
   },
   "patternParams": {
-    "consecutiveSubPatterns": 8,
-    "consecutiveStaticBlocks": 6,
-    "consecutiveDynamicBlocks": 4,
-    "windowXStart":26,
+    "consecutiveSubPatterns": 7,
+    "consecutiveStaticBlocks": 10,
+    "consecutiveDynamicBlocks": 2,
+    "windowXStart":30,
     "windowYStart":0,
     "windowXSpan":44,
     "windowYSpan":53
