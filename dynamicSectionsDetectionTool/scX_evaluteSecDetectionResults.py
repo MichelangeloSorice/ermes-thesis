@@ -44,6 +44,10 @@ def main():
 
         for cfgName in cfgDirsList:
             testedChangesMap = np.load(join(resultsDir, cfgName, cfgName+'_changesMap.npy')).tolist()[0]
+            with open(join(resultsDir, cfgName, cfgName+'_info.json'), 'r') as f:
+                infoData = json.load(f)
+                timeElapsedAnalysis = infoData['execTimeCaptureAnalysis']
+                timeElapsedDecision = infoData['execTimeDecision']
 
             # Counting down True Positives, False Positive, True Negative, False Negative
             # and total Predicted Positive and Negative
@@ -73,7 +77,9 @@ def main():
                 "countPP": countPP,
                 "countPN": countPN,
                 "totalP": P,
-                "totalN": N
+                "totalN": N,
+                "timeCaptureAnalysis": timeElapsedAnalysis,
+                "timeDecision": timeElapsedDecision
             }
 
         with open(workdir + '/output/secDetection_perCfgResults.json', 'w+') as evaluationResultsFile:

@@ -1,0 +1,10 @@
+{
+  "xVar": "patternParams.consecutiveStaticBlocks",
+  "yVar": "avgCorrectlyClassifiedImgs",
+  "xLabel": "Consecutive static blocks:",
+  "yLabel": "Accuracy",
+  "multicurveVar": {
+    "var": "patternParams.consecutiveSubPatterns",
+    "legendLabel": "Consecutive sub patterns: "
+  }
+}

@@ -95,11 +95,14 @@ def main():
         ParamsFile.close()
 
     setBlockGlobalVariables(sectionDetectionParams['blockParams'])
+    limitCaptures = sectionDetectionParams['limitCaptures']
 
     # Retrieving the list of paths to screenshot files in the input directory
     screenshotInputFolder = workdir + '/input/screenshots/'
     fileList = [join(screenshotInputFolder, f) for f in listdir(screenshotInputFolder) if
                 isfile(join(screenshotInputFolder, f))]
+    if limitCaptures != 0:
+        fileList = fileList[0:limitCaptures]
 
     if len(fileList) < 2:
         print('There are not enough file in the input folder to perform a meaningful comparison!')

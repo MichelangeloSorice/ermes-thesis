@@ -1,0 +1,10 @@
+{
+  "blockConfig": "cfg002",
+  "THRESHOLDS": {
+    "NN0": 0.65,
+    "PDE": 0.6
+  },
+  "additionalParams": {
+    "limitCaptures": 40
+  }
+}

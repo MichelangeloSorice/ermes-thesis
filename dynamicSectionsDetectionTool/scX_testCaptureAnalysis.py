@@ -19,7 +19,7 @@ testDirectoriesArray = [
 ]
 
 testDirectoriesArray1 = [
-    ('./testIOFolder/TestSuite6_wildMeteo/', 'meteo')
+    ('./testIOFolder/TestSuite3_isolatedBanners/', 'isolatedBanners'),
 ]
 
 
@@ -38,25 +38,16 @@ class ClassificationThread(th.Thread):
             # Perform classification task for all configurations
             for cfgFile in self.cfgFilesArray:
                 cfgName = cfgFile.split('/')[-1].split('.json')[0]
-                log.info(' Started detection task with ' + cfgName)
-                subprocess.call(['python3', 'sc1_computeDynamicSections.py', self.workdir, cfgFile], stdout=subprocess.DEVNULL)
-                log.info(' Completed classification task with ' + cfgName)
+                log.info(' Started analysis task with ' + cfgName)
+                subprocess.call(['python3', 'sc0_analyzeCaptures.py', self.workdir, cfgFile], stdout=subprocess.DEVNULL)
+                log.info(' Completed analysis task with ' + cfgName)
 
-            # Evaluate comprehensive results
-            subprocess.call(['python3', 'scX_evaluteSecDetectionResults.py', self.workdir], stdout=subprocess.DEVNULL)
-            log.info(' Completed results evaluation!')
-            # Cleaning workdir results
-            resDir = join(self.workdir, 'output', 'results')
-            rmtree(resDir)
-
-            resFile = join(self.workdir, 'output', 'secDetection_perCfgResults.json')
-            with open(resFile, 'r') as resFileData:
-                evaluation = json.load(resFileData)
-                resFileData.close()
-
-            for cfgFile in self.cfgFilesArray:
-                cfgName = cfgFile.split('/')[-1].split('.json')[0]
-                self.results.append((cfgName, evaluation[cfgName]))
+                # Cleaning workdir results
+                resFile = join(self.workdir, 'input', 'captureAnalysis', cfgName, 'analysisData.json')
+                with open(resFile, 'r') as resFileData:
+                    data = json.load(resFileData)
+                    self.results.append((cfgName, data))
+                    resFileData.close()
 
             log.info(' Completed execution!')
 
@@ -159,31 +150,14 @@ def main():
                 results[resTuple[0]] = {}
             results[resTuple[0]][classificationTh.name] = resTuple[1]
 
-    #print(results)
+    print(results)
 
     for cfg, cfgRes in results.items():
         if cfg == "summary":
             continue
-        truePositiveRate = round(
-            sum(res["countTP"] for res in cfgRes.values()) / sum(res["totalP"] for res in cfgRes.values()), 3)
-        falsePositiveRate = round(
-            sum(res["countFP"] for res in cfgRes.values()) / sum(res["totalN"] for res in cfgRes.values()), 3)
-        falseDiscoveryRate = round(
-            sum(res["countFP"] for res in cfgRes.values()) / sum(res["countPP"] for res in cfgRes.values()), 3)
-        precision = round(
-            sum(res["countTP"] for res in cfgRes.values()) / sum(res["countPP"] for res in cfgRes.values()), 3)
-        accuracy = round(
-            sum(res["countTP"]+res["countTN"] for res in cfgRes.values()) / sum(res["totalP"]+res["totalN"] for res in cfgRes.values()), 3)
-        timeAnalysis = round(sum(res["timeCaptureAnalysis"] for res in cfgRes.values()) / len(cfgRes.values()), 3)
-        timeDecision = round(sum(res["timeDecision"] for res in cfgRes.values()) / len(cfgRes.values()), 3)
+        timeAnalysis = round(sum(res["executionTime"] for res in cfgRes.values()) / len(cfgRes.values()), 3)
         results["summary"][cfg] = {
-            "truePositiveRate": truePositiveRate,
-            "falsePositiveRate": falsePositiveRate,
-            "falseDiscoveryRate": falseDiscoveryRate,
-            "precision": precision,
-            "accuracy": accuracy,
-            "timeAnalysis": timeAnalysis,
-            "timeDecision": timeDecision
+            "avgExcutionTime": timeAnalysis,
         }
 
     print(results)

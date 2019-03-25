@@ -1,0 +1,7 @@
+{
+  "xVar": "additionalParams.limitCaptures",
+  "yVar": "timeDecision",
+  "xLabel": "Captures evaluated",
+  "yLabel": "Computation time",
+  "multicurveVar": ""
+}
